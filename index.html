@@ -16,10 +16,8 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
         body { background: #0a0e17; color: #fff; min-height: 100vh; }
         
-        /* Login Page */
         #loginPage {
             display: flex;
             justify-content: center;
@@ -67,22 +65,10 @@
         .btn-primary { background: #00d4ff; color: #0a0e17; }
         .btn-primary:hover { background: #00b8e6; transform: scale(1.02); }
         
-        .btn-danger { background: #fc8181; color: #0a0e17; }
-        .btn-danger:hover { background: #f56565; }
-        
-        .btn-success { background: #48bb78; color: #0a0e17; }
-        .btn-success:hover { background: #38a169; }
-        
-        .btn-warning { background: #f6ad55; color: #0a0e17; }
-        .btn-warning:hover { background: #ed8936; }
-        
         .error-msg { color: #fc8181; font-size: 13px; text-align: center; margin-top: 10px; }
         .success-msg { color: #48bb78; font-size: 13px; text-align: center; margin-top: 10px; }
         
-        /* Main Dashboard */
-        #mainApp {
-            display: none;
-        }
+        #mainApp { display: none; }
         
         .navbar {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
@@ -114,7 +100,6 @@
             font-size: 14px;
             cursor: pointer;
         }
-        
         .nav-links a:hover, .nav-links a.active {
             background: rgba(0, 212, 255, 0.15);
             color: #00d4ff;
@@ -142,7 +127,6 @@
         
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
         
-        /* Stats Cards */
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -178,87 +162,8 @@
             border: 1px solid rgba(0, 212, 255, 0.1);
         }
         
-        .card h2 {
-            font-size: 16px;
-            color: #00d4ff;
-            margin-bottom: 15px;
-        }
-        
+        .card h2 { font-size: 16px; color: #00d4ff; margin-bottom: 15px; }
         #map { height: 350px; border-radius: 8px; }
-        
-        /* Admin Section */
-        .admin-section {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 12px;
-            padding: 25px;
-            border: 1px solid rgba(0, 212, 255, 0.15);
-            margin-top: 25px;
-        }
-        
-        .admin-section h2 { color: #00d4ff; font-size: 18px; margin-bottom: 20px; }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr auto;
-            gap: 15px;
-            align-items: end;
-        }
-        
-        .form-row label { font-size: 12px; color: #a0aec0; display: block; margin-bottom: 4px; }
-        .form-row input {
-            width: 100%;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-        }
-        .form-row input:focus { outline: none; border-color: #00d4ff; }
-        
-        .fp-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 12px;
-            margin-top: 15px;
-        }
-        
-        .fp-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 12px 16px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .fp-item .id { color: #00d4ff; font-weight: bold; }
-        .fp-item .name { color: #e2e8f0; }
-        .fp-item .phone { color: #a0aec0; font-size: 12px; display: block; }
-        
-        .fp-item .delete-btn {
-            background: rgba(252, 129, 129, 0.2);
-            color: #fc8181;
-            border: none;
-            padding: 4px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .fp-item .delete-btn:hover { background: rgba(252, 129, 129, 0.4); }
-        
-        .admin-status {
-            display: inline-block;
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .admin-status.active { background: rgba(72, 187, 120, 0.2); color: #48bb78; }
-        .admin-status.inactive { background: rgba(252, 129, 129, 0.2); color: #fc8181; }
         
         .toast {
             position: fixed;
@@ -283,16 +188,8 @@
             to { transform: translateY(0); opacity: 1; }
         }
         
-        .loading { 
-            text-align: center; 
-            color: #a0aec0; 
-            padding: 20px;
-            grid-column: 1 / -1;
-        }
-        
         @media (max-width: 900px) {
             .row { grid-template-columns: 1fr; }
-            .form-row { grid-template-columns: 1fr; }
             .navbar { flex-direction: column; align-items: stretch; }
             .nav-links { justify-content: center; }
         }
@@ -300,16 +197,14 @@
 </head>
 <body>
 
-<!-- ============================================ -->
-<!-- LOGIN PAGE -->
-<!-- ============================================ -->
+<!-- Login Page -->
 <div id="loginPage">
     <div class="login-box">
         <h1>🚗 Vehicle Admin</h1>
-        <p>Login to manage your fleet</p>
+        <p>Login with your Firebase credentials</p>
         
-        <input type="email" id="loginEmail" placeholder="Email" value="admin@vehicle.com">
-        <input type="password" id="loginPassword" placeholder="Password" value="admin123">
+        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="password" id="loginPassword" placeholder="Password">
         
         <button class="btn btn-primary" onclick="login()">🔐 Login</button>
         
@@ -318,29 +213,20 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- MAIN APP -->
-<!-- ============================================ -->
+<!-- Main App -->
 <div id="mainApp">
-
-    <!-- Navbar -->
     <nav class="navbar">
         <h1>🚗 Vehicle <span>Dashboard</span></h1>
         <div class="nav-links">
-            <a class="active" onclick="showSection('dashboard')">📊 Dashboard</a>
-            <a onclick="showSection('admin')">🔐 Admin</a>
-            <span class="user-info" id="userEmail">admin@vehicle.com</span>
+            <span class="user-info" id="userEmail">Loading...</span>
             <button class="logout-btn" onclick="logout()">🚪 Logout</button>
         </div>
     </nav>
 
     <div class="container">
-
-        <!-- Toast -->
         <div id="toast" class="toast"></div>
 
-        <!-- Stats -->
-        <div class="stats" id="statsContainer">
+        <div class="stats">
             <div class="stat-card">
                 <h3>Relay Status</h3>
                 <div class="value" id="relayStatus">--</div>
@@ -357,13 +243,8 @@
                 <h3>Fingerprints</h3>
                 <div class="value green" id="fpCount">0</div>
             </div>
-            <div class="stat-card">
-                <h3>Admin Mode</h3>
-                <div class="value" id="adminModeStatus">--</div>
-            </div>
         </div>
 
-        <!-- Map & Live Data -->
         <div class="row">
             <div class="card">
                 <h2>📍 Live Location</h2>
@@ -382,48 +263,13 @@
                 </div>
             </div>
         </div>
-
-        <!-- Admin Section -->
-        <div id="adminSection" class="admin-section" style="display:none;">
-            <h2>🔐 Admin Panel - Fingerprint Management</h2>
-            
-            <div class="form-row">
-                <div>
-                    <label>👤 Name</label>
-                    <input type="text" id="fpName" placeholder="Enter person's name">
-                </div>
-                <div>
-                    <label>📱 Phone Number</label>
-                    <input type="text" id="fpPhone" placeholder="+91XXXXXXXXXX">
-                </div>
-                <div>
-                    <label>🆔 Fingerprint ID</label>
-                    <input type="number" id="fpId" placeholder="Auto" readonly style="opacity:0.6;">
-                </div>
-                <div>
-                    <button class="btn btn-primary" onclick="startEnrollment()">📌 Enroll Fingerprint</button>
-                </div>
-            </div>
-            
-            <div style="margin-top: 20px;">
-                <h3 style="color: #a0aec0; font-size: 14px; margin-bottom: 10px;">Registered Fingerprints</h3>
-                <div id="fpList" class="fp-list">
-                    <div class="loading">Loading fingerprints...</div>
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- JAVASCRIPT -->
-<!-- ============================================ -->
 <script>
 // ============================================
 // FIREBASE CONFIGURATION
 // ============================================
-
 const firebaseConfig = {
   apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
   authDomain: "vehicle-web-dashboard.firebaseapp.com",
@@ -434,28 +280,36 @@ const firebaseConfig = {
   appId: "1:890756908626:web:8a1f205b40fe265134c18b"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const database = firebase.database();
 
 // ============================================
-// AUTHENTICATION FUNCTIONS
+// STATE
 // ============================================
+let map, marker, sensorListener, fpListener;
+let mapInitialized = false;
 
+// ============================================
+// LOGIN / LOGOUT
+// ============================================
 function login() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
     const errorEl = document.getElementById('loginError');
     const successEl = document.getElementById('loginSuccess');
     
     errorEl.textContent = '';
     successEl.textContent = '';
     
+    if (!email || !password) {
+        errorEl.textContent = '❌ Please enter email and password';
+        return;
+    }
+    
     auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
+        .then(() => {
             successEl.textContent = '✅ Login successful!';
-            document.getElementById('userEmail').textContent = email;
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             initDashboard();
@@ -467,40 +321,55 @@ function login() {
 
 function logout() {
     // Clean up listeners
-    if (sensorListener) sensorListener.off();
-    if (fpListener) fpListener.off();
+    if (sensorListener) {
+        sensorListener.off();
+        sensorListener = null;
+    }
+    if (fpListener) {
+        fpListener.off();
+        fpListener = null;
+    }
     
     auth.signOut().then(() => {
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('loginError').textContent = '';
         document.getElementById('loginSuccess').textContent = '';
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginPassword').value = '';
         mapInitialized = false;
+        
+        // Clear the map
+        if (map) {
+            map.remove();
+            map = null;
+            marker = null;
+        }
+    }).catch(error => {
+        showToast('Logout error: ' + error.message, 'error');
     });
 }
 
-// Auto-login check
+// ============================================
+// AUTH STATE LISTENER
+// ============================================
 auth.onAuthStateChanged(user => {
     if (user) {
-        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('userEmail').textContent = user.email || user.phoneNumber || 'User';
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         initDashboard();
+    } else {
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'flex';
     }
 });
 
 // ============================================
-// DASHBOARD FUNCTIONS
+// DASHBOARD
 // ============================================
-
-let map;
-let marker;
-let sensorListener;
-let fpListener;
-let mapInitialized = false;
-
 function initDashboard() {
-    // Only initialize map once
+    // Initialize map once
     if (!mapInitialized && document.getElementById('map')) {
         map = L.map('map').setView([20.5937, 78.9629], 5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -510,16 +379,11 @@ function initDashboard() {
         marker = L.marker([20.5937, 78.9629]).addTo(map);
         mapInitialized = true;
     } else if (mapInitialized && map) {
-        // If map already exists, just invalidate size
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 500);
+        setTimeout(() => map.invalidateSize(), 500);
     }
     
-    // Start listening to sensor data
     listenToSensorData();
     listenToFingerprints();
-    listenToAdminMode();
 }
 
 function listenToSensorData() {
@@ -548,27 +412,9 @@ function listenToFingerprints() {
     fpListener = fpRef.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-            const fpArray = Object.values(data);
-            document.getElementById('fpCount').textContent = fpArray.length;
-            renderFingerprints(fpArray);
+            document.getElementById('fpCount').textContent = Object.values(data).length;
         } else {
             document.getElementById('fpCount').textContent = '0';
-            document.getElementById('fpList').innerHTML = 
-                '<p style="color: #a0aec0; grid-column: 1/-1;">No fingerprints registered.</p>';
-        }
-    });
-}
-
-function listenToAdminMode() {
-    const adminRef = database.ref('admin/active');
-    adminRef.on('value', snapshot => {
-        const data = snapshot.val();
-        if (data) {
-            document.getElementById('adminModeStatus').textContent = '🟢 Active';
-            document.getElementById('adminModeStatus').className = 'value green';
-        } else {
-            document.getElementById('adminModeStatus').textContent = '🔴 Inactive';
-            document.getElementById('adminModeStatus').className = 'value red';
         }
     });
 }
@@ -600,105 +446,6 @@ function updateMap(lat, lng) {
     }
 }
 
-function renderFingerprints(fpArray) {
-    const container = document.getElementById('fpList');
-    if (!fpArray || fpArray.length === 0) {
-        container.innerHTML = '<p style="color: #a0aec0; grid-column: 1/-1;">No fingerprints registered.</p>';
-        return;
-    }
-    
-    // Find next available ID
-    const ids = fpArray.map(f => f.id || 0);
-    const maxId = Math.max(...ids, 0);
-    document.getElementById('fpId').value = maxId + 1;
-    
-    container.innerHTML = fpArray.map(fp => `
-        <div class="fp-item">
-            <div>
-                <span class="id">#${fp.id || '?'}</span>
-                <span class="name">${fp.name || 'Unknown'}</span>
-                <span class="phone">${fp.phone || ''}</span>
-            </div>
-            <button class="delete-btn" onclick="deleteFingerprint(${fp.id})">✕</button>
-        </div>
-    `).join('');
-}
-
-// ============================================
-// ADMIN FUNCTIONS
-// ============================================
-
-function showSection(section) {
-    const adminSection = document.getElementById('adminSection');
-    const navLinks = document.querySelectorAll('.nav-links a');
-    
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    if (section === 'admin') {
-        adminSection.style.display = 'block';
-        document.querySelector('.nav-links a:nth-child(2)').classList.add('active');
-    } else {
-        adminSection.style.display = 'none';
-        document.querySelector('.nav-links a:first-child').classList.add('active');
-    }
-}
-
-function startEnrollment() {
-    const name = document.getElementById('fpName').value.trim();
-    const phone = document.getElementById('fpPhone').value.trim();
-    
-    if (!name) {
-        showToast('Please enter a name', 'error');
-        return;
-    }
-    
-    if (!phone || phone.length < 10) {
-        showToast('Please enter a valid phone number', 'error');
-        return;
-    }
-    
-    // Set admin mode active
-    database.ref('admin').set({
-        active: true,
-        mode: 'enrollment'
-    }).then(() => {
-        // Send enrollment command to device
-        return database.ref('admin/device_commands').set({
-            enroll: true,
-            name: name,
-            phone: phone,
-            requested_at: Date.now()
-        });
-    }).then(() => {
-        showToast(`✅ Enrollment request sent for ${name}. Place finger on sensor.`, 'success');
-        document.getElementById('fpName').value = '';
-        document.getElementById('fpPhone').value = '';
-    }).catch(err => {
-        showToast('❌ Failed to send enrollment request: ' + err.message, 'error');
-        console.error(err);
-    });
-}
-
-function deleteFingerprint(id) {
-    if (!confirm(`Delete fingerprint ID #${id}?`)) return;
-    
-    // Send delete command to device
-    database.ref('admin/device_commands').set({
-        delete: true,
-        id: id,
-        requested_at: Date.now()
-    }).then(() => {
-        showToast(`✅ Delete request sent for fingerprint #${id}`, 'success');
-    }).catch(err => {
-        showToast('❌ Failed to send delete request: ' + err.message, 'error');
-        console.error(err);
-    });
-}
-
-// ============================================
-// TOAST NOTIFICATION
-// ============================================
-
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
@@ -709,20 +456,14 @@ function showToast(message, type = 'info') {
     }, 5000);
 }
 
-// ============================================
-// ENTER KEY SUPPORT
-// ============================================
-
+// Enter key support
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-        if (document.getElementById('loginPage').style.display !== 'none') {
-            login();
-        }
+    if (e.key === 'Enter' && document.getElementById('loginPage').style.display !== 'none') {
+        login();
     }
 });
 
-console.log('🚗 Vehicle Dashboard loaded!');
-console.log('🔐 Use email: admin@vehicle.com, password: admin123');
+console.log('🚗 Vehicle Dashboard loaded - Firebase Auth Only');
 </script>
 </body>
 </html>
