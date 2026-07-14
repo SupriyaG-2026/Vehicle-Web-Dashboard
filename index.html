@@ -15,9 +15,66 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0a0e17; color: #fff; min-height: 100vh; }
+        body { background: #0a0e17; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
         
-        #mainApp { display: block; }
+        /* Login Screen Styling */
+        #loginScreen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            text-align: center;
+        }
+        
+        .login-card h2 { color: #00d4ff; margin-bottom: 10px; font-size: 24px; }
+        .login-card p { color: #a0aec0; margin-bottom: 25px; font-size: 14px; }
+        
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; color: #a0aec0; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0f1123;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .input-group input:focus { border-color: #00d4ff; box-shadow: 0 0 10px rgba(0, 212, 255, 0.2); }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #00d4ff;
+            color: #0a0e17;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .login-btn:hover { background: #00b2d6; transform: translateY(-1px); }
+        
+        #errorMessage { color: #fc8181; font-size: 14px; margin-top: 15px; display: none; }
+
+        /* Main Dashboard (Hidden by default) */
+        #mainApp { display: none; width: 100%; }
         
         .navbar {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
@@ -32,6 +89,19 @@
         
         .navbar h1 { color: #00d4ff; font-size: 22px; }
         .navbar h1 span { color: #fff; }
+        
+        /* Logout Button CSS */
+        .logout-btn {
+            background: transparent;
+            color: #fc8181;
+            border: 1px solid #fc8181;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover { background: rgba(252, 129, 129, 0.1); }
         
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
         
@@ -104,10 +174,27 @@
 </head>
 <body>
 
+<!-- Login Screen -->
+<div id="loginScreen">
+    <div class="login-card">
+        <h2>System Verification</h2>
+        <p>Enter your password to access the monitoring node</p>
+        
+        <div class="input-group">
+            <label for="passwordInput">Password</label>
+            <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        
+        <button class="login-btn" onclick="handleLogin()">Unlock Dashboard</button>
+        <div id="errorMessage">⚠️ Incorrect password. Try again.</div>
+    </div>
+</div>
+
 <!-- Main App Dashboard -->
 <div id="mainApp">
     <nav class="navbar">
         <h1>🚗 Vehicle <span>Dashboard</span></h1>
+        <button class="logout-btn" onclick="handleLogout()">Lock Dashboard</button>
     </nav>
 
     <div class="container">
@@ -155,8 +242,10 @@
 
 <script>
 // ============================================
-// FIREBASE CONFIGURATION
+// CONFIGURATION & CREDENTIALS
 // ============================================
+const ADMIN_PASSWORD = "your_secret_password"; // Change this to your preferred password
+
 const firebaseConfig = {
   apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
   authDomain: "vehicle-web-dashboard.firebaseapp.com",
@@ -177,6 +266,44 @@ let map, marker, sensorListener, fpListener;
 let mapInitialized = false;
 
 // ============================================
+// AUTHENTICATION LOGIC
+// ============================================
+function handleLogin() {
+    const passwordInput = document.getElementById('passwordInput').value;
+    const errorDiv = document.getElementById('errorMessage');
+    
+    if (passwordInput === ADMIN_PASSWORD) {
+        errorDiv.style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        
+        // Start live dashboard systems once verified
+        initDashboard();
+    } else {
+        errorDiv.style.display = 'block';
+        document.getElementById('passwordInput').value = '';
+    }
+}
+
+// Allow pressing 'Enter' key to submit
+document.getElementById('passwordInput').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        handleLogin();
+    }
+});
+
+function handleLogout() {
+    // Stop listening to active database nodes to protect data transfer
+    if (sensorListener) sensorListener.off();
+    if (fpListener) fpListener.off();
+    
+    // Clear the password field and toggle screens
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ============================================
 // DASHBOARD INITIALIZATION
 // ============================================
 function initDashboard() {
@@ -189,6 +316,9 @@ function initDashboard() {
         }).addTo(map);
         marker = L.marker([20.5937, 78.9629]).addTo(map);
         mapInitialized = true;
+    } else if (mapInitialized && map) {
+        // Redraw map on screen transitions to prevent scaling visual bugs
+        setTimeout(() => { map.invalidateSize(); }, 100);
     }
     
     listenToSensorData();
@@ -230,7 +360,6 @@ function updateUI(data) {
     document.getElementById('relayStatus').textContent = data.relay_state ? '🟢 ON' : '🔴 OFF';
     document.getElementById('relayStatus').className = 'value ' + (data.relay_state ? 'green' : 'red');
     
-    // Fallbacks to avoid crashes if individual fields are missing
     const ax = data.accel_x || 0;
     const ay = data.accel_y || 0;
     const az = data.accel_z || 0;
@@ -268,19 +397,11 @@ function showToast(message, type = 'info') {
     }, 5000);
 }
 
-// ============================================
-// EXECUTE ON LOAD
-// ============================================
-window.addEventListener('DOMContentLoaded', () => {
-    initDashboard();
-});
-
+// Clean up connections if window is completely closed
 window.addEventListener('beforeunload', function() {
     if (sensorListener) sensorListener.off();
     if (fpListener) fpListener.off();
 });
-
-console.log('🚗 Vehicle Dashboard loaded successfully without authentication layer.');
 </script>
 </body>
 </html>
