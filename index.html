@@ -466,11 +466,16 @@ function login() {
 }
 
 function logout() {
+    // Clean up listeners
+    if (sensorListener) sensorListener.off();
+    if (fpListener) fpListener.off();
+    
     auth.signOut().then(() => {
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('loginError').textContent = '';
         document.getElementById('loginSuccess').textContent = '';
+        mapInitialized = false;
     });
 }
 
@@ -492,15 +497,24 @@ let map;
 let marker;
 let sensorListener;
 let fpListener;
+let mapInitialized = false;
 
 function initDashboard() {
-    // Initialize map
-    map = L.map('map').setView([20.5937, 78.9629], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
-    marker = L.marker([20.5937, 78.9629]).addTo(map);
+    // Only initialize map once
+    if (!mapInitialized && document.getElementById('map')) {
+        map = L.map('map').setView([20.5937, 78.9629], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        marker = L.marker([20.5937, 78.9629]).addTo(map);
+        mapInitialized = true;
+    } else if (mapInitialized && map) {
+        // If map already exists, just invalidate size
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 500);
+    }
     
     // Start listening to sensor data
     listenToSensorData();
@@ -509,7 +523,10 @@ function initDashboard() {
 }
 
 function listenToSensorData() {
-    if (sensorListener) sensorListener.off();
+    if (sensorListener) {
+        sensorListener.off();
+        sensorListener = null;
+    }
     
     const sensorRef = database.ref('sensor_data');
     sensorListener = sensorRef.on('value', snapshot => {
@@ -522,7 +539,10 @@ function listenToSensorData() {
 }
 
 function listenToFingerprints() {
-    if (fpListener) fpListener.off();
+    if (fpListener) {
+        fpListener.off();
+        fpListener = null;
+    }
     
     const fpRef = database.ref('fingerprints');
     fpListener = fpRef.on('value', snapshot => {
@@ -540,10 +560,10 @@ function listenToFingerprints() {
 }
 
 function listenToAdminMode() {
-    const adminRef = database.ref('admin');
+    const adminRef = database.ref('admin/active');
     adminRef.on('value', snapshot => {
         const data = snapshot.val();
-        if (data && data.active) {
+        if (data) {
             document.getElementById('adminModeStatus').textContent = '🟢 Active';
             document.getElementById('adminModeStatus').className = 'value green';
         } else {
@@ -574,7 +594,7 @@ function updateUI(data) {
 }
 
 function updateMap(lat, lng) {
-    if (lat !== 0 && lng !== 0) {
+    if (lat !== 0 && lng !== 0 && marker) {
         marker.setLatLng([lat, lng]);
         map.setView([lat, lng], 15);
     }
@@ -641,21 +661,20 @@ function startEnrollment() {
     database.ref('admin').set({
         active: true,
         mode: 'enrollment'
-    });
-    
-    // Send enrollment command to device
-    const commandRef = database.ref('admin/device_commands');
-    commandRef.set({
-        enroll: true,
-        name: name,
-        phone: phone,
-        requested_at: Date.now()
+    }).then(() => {
+        // Send enrollment command to device
+        return database.ref('admin/device_commands').set({
+            enroll: true,
+            name: name,
+            phone: phone,
+            requested_at: Date.now()
+        });
     }).then(() => {
         showToast(`✅ Enrollment request sent for ${name}. Place finger on sensor.`, 'success');
         document.getElementById('fpName').value = '';
         document.getElementById('fpPhone').value = '';
     }).catch(err => {
-        showToast('❌ Failed to send enrollment request', 'error');
+        showToast('❌ Failed to send enrollment request: ' + err.message, 'error');
         console.error(err);
     });
 }
@@ -664,15 +683,14 @@ function deleteFingerprint(id) {
     if (!confirm(`Delete fingerprint ID #${id}?`)) return;
     
     // Send delete command to device
-    const commandRef = database.ref('admin/device_commands');
-    commandRef.set({
+    database.ref('admin/device_commands').set({
         delete: true,
         id: id,
         requested_at: Date.now()
     }).then(() => {
         showToast(`✅ Delete request sent for fingerprint #${id}`, 'success');
     }).catch(err => {
-        showToast('❌ Failed to send delete request', 'error');
+        showToast('❌ Failed to send delete request: ' + err.message, 'error');
         console.error(err);
     });
 }
@@ -700,19 +718,6 @@ document.addEventListener('keydown', function(e) {
         if (document.getElementById('loginPage').style.display !== 'none') {
             login();
         }
-    }
-});
-
-// ============================================
-// INITIAL SETUP
-// ============================================
-
-// Check if user is already logged in
-auth.onAuthStateChanged(user => {
-    if (user) {
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        initDashboard();
     }
 });
 
