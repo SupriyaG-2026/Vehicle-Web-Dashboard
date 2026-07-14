@@ -7,7 +7,6 @@
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <!-- Leaflet for Maps -->
@@ -18,60 +17,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0a0e17; color: #fff; min-height: 100vh; }
         
-        #loginPage {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0a0e17, #1a1a2e);
-        }
-        
-        .login-box {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        
-        .login-box h1 { color: #00d4ff; text-align: center; margin-bottom: 5px; }
-        .login-box p { color: #a0aec0; text-align: center; margin-bottom: 30px; font-size: 14px; }
-        
-        .login-box input {
-            width: 100%;
-            padding: 12px 16px;
-            margin-bottom: 15px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-        }
-        .login-box input:focus { outline: none; border-color: #00d4ff; }
-        
-        .login-box .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        
-        .btn-primary { background: #00d4ff; color: #0a0e17; }
-        .btn-primary:hover { background: #00b8e6; transform: scale(1.02); }
-        
-        .btn-danger { background: #fc8181; color: #0a0e17; }
-        .btn-danger:hover { background: #f56565; }
-        
-        .error-msg { color: #fc8181; font-size: 13px; text-align: center; margin-top: 10px; }
-        .success-msg { color: #48bb78; font-size: 13px; text-align: center; margin-top: 10px; }
-        
-        #mainApp { display: none; }
+        #mainApp { display: block; }
         
         .navbar {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
@@ -86,33 +32,6 @@
         
         .navbar h1 { color: #00d4ff; font-size: 22px; }
         .navbar h1 span { color: #fff; }
-        
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .user-info {
-            color: #a0aec0;
-            font-size: 13px;
-            padding: 5px 12px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-        }
-        
-        .logout-btn {
-            background: rgba(252, 129, 129, 0.2);
-            color: #fc8181;
-            border: 1px solid rgba(252, 129, 129, 0.2);
-            padding: 6px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: 0.3s;
-        }
-        .logout-btn:hover { background: rgba(252, 129, 129, 0.4); }
         
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
         
@@ -180,36 +99,15 @@
         @media (max-width: 900px) {
             .row { grid-template-columns: 1fr; }
             .navbar { flex-direction: column; align-items: stretch; }
-            .nav-links { justify-content: center; }
         }
     </style>
 </head>
 <body>
 
-<!-- Login Page -->
-<div id="loginPage">
-    <div class="login-box">
-        <h1>🚗 Vehicle Admin</h1>
-        <p>Login with your Firebase credentials</p>
-        
-        <input type="email" id="loginEmail" placeholder="Email" autocomplete="off">
-        <input type="password" id="loginPassword" placeholder="Password" autocomplete="off">
-        
-        <button class="btn btn-primary" onclick="login()">🔐 Login</button>
-        
-        <div id="loginError" class="error-msg"></div>
-        <div id="loginSuccess" class="success-msg"></div>
-    </div>
-</div>
-
-<!-- Main App -->
+<!-- Main App Dashboard -->
 <div id="mainApp">
     <nav class="navbar">
         <h1>🚗 Vehicle <span>Dashboard</span></h1>
-        <div class="nav-links">
-            <span class="user-info" id="userEmail">Loading...</span>
-            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-        </div>
     </nav>
 
     <div class="container">
@@ -270,7 +168,6 @@ const firebaseConfig = {
 };
     
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const database = firebase.database();
 
 // ============================================
@@ -280,135 +177,9 @@ let map, marker, sensorListener, fpListener;
 let mapInitialized = false;
 
 // ============================================
-// LOGIN / LOGOUT
-// ============================================
-function login() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    const errorEl = document.getElementById('loginError');
-    const successEl = document.getElementById('loginSuccess');
-    
-    errorEl.textContent = '';
-    successEl.textContent = '';
-    
-    if (!email || !password) {
-        errorEl.textContent = '❌ Please enter email and password';
-        return;
-    }
-    
-    // Show loading
-    const btn = document.querySelector('.login-box .btn');
-    btn.textContent = '⏳ Logging in...';
-    btn.disabled = true;
-    
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            successEl.textContent = '✅ Login successful!';
-            btn.textContent = '🔐 Login';
-            btn.disabled = false;
-            // Clear fields for security
-            document.getElementById('loginPassword').value = '';
-        })
-        .catch(error => {
-            errorEl.textContent = '❌ ' + error.message;
-            btn.textContent = '🔐 Login';
-            btn.disabled = false;
-        });
-}
-
-function logout() {
-    // Show loading state
-    const logoutBtn = document.querySelector('.logout-btn');
-    logoutBtn.textContent = '⏳ Logging out...';
-    logoutBtn.disabled = true;
-    
-    // Clean up Firebase listeners
-    if (sensorListener) {
-        sensorListener.off();
-        sensorListener = null;
-    }
-    if (fpListener) {
-        fpListener.off();
-        fpListener = null;
-    }
-    
-    // Clear local storage
-    localStorage.removeItem('firebase:host:vehicle-web-dashboard-default-rtdb.firebaseio.com');
-    localStorage.removeItem('firebase:authUser:AIzaSyB...');
-    
-    // Sign out from Firebase
-    auth.signOut()
-        .then(() => {
-            // Clear all Firebase related data from session storage
-            sessionStorage.clear();
-            localStorage.clear();
-            
-            // Reset UI
-            document.getElementById('mainApp').style.display = 'none';
-            document.getElementById('loginPage').style.display = 'flex';
-            document.getElementById('loginError').textContent = '';
-            document.getElementById('loginSuccess').textContent = '';
-            document.getElementById('loginPassword').value = '';
-            mapInitialized = false;
-            
-            // Remove map
-            if (map) {
-                map.remove();
-                map = null;
-                marker = null;
-            }
-            
-            // Reset logout button
-            logoutBtn.textContent = '🚪 Logout';
-            logoutBtn.disabled = false;
-            
-            showToast('✅ Logged out successfully!', 'success');
-        })
-        .catch(error => {
-            console.error('Logout error:', error);
-            logoutBtn.textContent = '🚪 Logout';
-            logoutBtn.disabled = false;
-            showToast('❌ Logout error: ' + error.message, 'error');
-        });
-}
-
-// ============================================
-// AUTH STATE LISTENER
-// ============================================
-// Track if this is a manual logout
-let manualLogout = false;
-
-auth.onAuthStateChanged(user => {
-    // Skip if this was a manual logout
-    if (manualLogout) {
-        manualLogout = false;
-        return;
-    }
-    
-    if (user) {
-        document.getElementById('userEmail').textContent = user.email || user.phoneNumber || 'User';
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        initDashboard();
-    } else {
-        // Check if user was previously logged in
-        const wasLoggedIn = sessionStorage.getItem('wasLoggedIn');
-        if (wasLoggedIn === 'true') {
-            // This was a manual logout or session expired
-            sessionStorage.removeItem('wasLoggedIn');
-        }
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('loginPage').style.display = 'flex';
-    }
-});
-
-// ============================================
-// DASHBOARD
+// DASHBOARD INITIALIZATION
 // ============================================
 function initDashboard() {
-    // Store login state
-    sessionStorage.setItem('wasLoggedIn', 'true');
-    
     // Initialize map once
     if (!mapInitialized && document.getElementById('map')) {
         map = L.map('map').setView([20.5937, 78.9629], 5);
@@ -418,8 +189,6 @@ function initDashboard() {
         }).addTo(map);
         marker = L.marker([20.5937, 78.9629]).addTo(map);
         mapInitialized = true;
-    } else if (mapInitialized && map) {
-        setTimeout(() => map.invalidateSize(), 500);
     }
     
     listenToSensorData();
@@ -429,7 +198,6 @@ function initDashboard() {
 function listenToSensorData() {
     if (sensorListener) {
         sensorListener.off();
-        sensorListener = null;
     }
     
     const sensorRef = database.ref('sensor_data');
@@ -445,7 +213,6 @@ function listenToSensorData() {
 function listenToFingerprints() {
     if (fpListener) {
         fpListener.off();
-        fpListener = null;
     }
     
     const fpRef = database.ref('fingerprints');
@@ -463,24 +230,29 @@ function updateUI(data) {
     document.getElementById('relayStatus').textContent = data.relay_state ? '🟢 ON' : '🔴 OFF';
     document.getElementById('relayStatus').className = 'value ' + (data.relay_state ? 'green' : 'red');
     
-    const totalG = Math.sqrt(data.accel_x*data.accel_x + data.accel_y*data.accel_y + data.accel_z*data.accel_z) / 9.81;
+    // Fallbacks to avoid crashes if individual fields are missing
+    const ax = data.accel_x || 0;
+    const ay = data.accel_y || 0;
+    const az = data.accel_z || 0;
+    
+    const totalG = Math.sqrt(ax*ax + ay*ay + az*az) / 9.81;
     document.getElementById('accelValue').textContent = totalG.toFixed(2) + 'G';
     
-    const gpsFixed = data.lat !== 0 && data.lng !== 0;
+    const gpsFixed = data.lat && data.lng && data.lat !== 0 && data.lng !== 0;
     document.getElementById('gpsStatus').textContent = gpsFixed ? '📍 Fixed' : '⏳ Searching';
     document.getElementById('gpsStatus').className = 'value ' + (gpsFixed ? 'green' : 'yellow');
     
-    document.getElementById('liveX').textContent = data.accel_x.toFixed(2);
-    document.getElementById('liveY').textContent = data.accel_y.toFixed(2);
-    document.getElementById('liveZ').textContent = data.accel_z.toFixed(2);
-    document.getElementById('liveLat').textContent = data.lat.toFixed(6);
-    document.getElementById('liveLng').textContent = data.lng.toFixed(6);
+    document.getElementById('liveX').textContent = ax.toFixed(2);
+    document.getElementById('liveY').textContent = ay.toFixed(2);
+    document.getElementById('liveZ').textContent = az.toFixed(2);
+    document.getElementById('liveLat').textContent = data.lat ? data.lat.toFixed(6) : '0.000000';
+    document.getElementById('liveLng').textContent = data.lng ? data.lng.toFixed(6) : '0.000000';
     document.getElementById('liveRelay').textContent = data.relay_state ? 'ON' : 'OFF';
     document.getElementById('liveTime').textContent = new Date().toLocaleString();
 }
 
 function updateMap(lat, lng) {
-    if (lat !== 0 && lng !== 0 && marker) {
+    if (lat !== 0 && lng !== 0 && marker && map) {
         marker.setLatLng([lat, lng]);
         map.setView([lat, lng], 15);
     }
@@ -497,28 +269,18 @@ function showToast(message, type = 'info') {
 }
 
 // ============================================
-// ENTER KEY SUPPORT
+// EXECUTE ON LOAD
 // ============================================
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && document.getElementById('loginPage').style.display !== 'none') {
-        login();
-    }
+window.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
 });
 
-// ============================================
-// PAGE UNLOAD - Cleanup
-// ============================================
 window.addEventListener('beforeunload', function() {
-    if (sensorListener) {
-        sensorListener.off();
-    }
-    if (fpListener) {
-        fpListener.off();
-    }
+    if (sensorListener) sensorListener.off();
+    if (fpListener) fpListener.off();
 });
 
-console.log('🚗 Vehicle Dashboard loaded - Firebase Auth Only');
-console.log('💡 Login with your Firebase credentials');
+console.log('🚗 Vehicle Dashboard loaded successfully without authentication layer.');
 </script>
 </body>
 </html>
