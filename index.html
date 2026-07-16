@@ -320,7 +320,7 @@
                 </div>
                 <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="clear-btn" onclick="clearPath()">🗑️ Clear Current Path</button>
-                    <button class="refresh-btn" onclick="zoomToIndia()">🇮🇳 Zoom to India</button>
+                    <button class="refresh-btn" onclick="zoomToBangalore()">📍 Zoom to Bangalore</button>
                 </div>
             </div>
         </div>
@@ -332,6 +332,8 @@
 // CONFIGURATION
 // ============================================
 
+// Paste your deployed Google Apps Script Web App URL here to bypass the 5-minute CSV delay!
+const APPS_SCRIPT_URL = "PASTE_YOUR_DEPLOYED_WEB_APP_URL_HERE"; 
 const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBeHFigSw8HUlD9PmSIFC3qAVAI6L3HDKRs_hkQR9jZ6RQzWXxqazn_cb5VqhxC32s2yYGQZx3DLZw/pub?gid=0&single=true&output=csv";
 
 const firebaseConfig = {
@@ -366,7 +368,7 @@ let markers = [];
 let relayState = false;
 let sheetsLoaded = false;
 
-// Default zoom to Bangalore, India
+// Coordinates centered precisely around Bangalore, India
 const INDIA_CENTER = [20.5937, 78.9629];
 const BANGALORE_CENTER = [12.9726, 77.6523];
 const DEFAULT_ZOOM = 5;
@@ -436,7 +438,7 @@ function handleLogout() {
 function stopListeners() {
     if (sensorListener) {
         try {
-            const ref = database.ref('device_profile/sensor_data');
+            const ref = database.ref('sensor_data');
             ref.off('value', sensorListener);
         } catch(e) {}
         sensorListener = null;
@@ -462,21 +464,11 @@ function zoomToBangalore() {
 }
 
 function getLocationName(lat, lng) {
-    // Simple reverse geocoding approximation
     if (lat >= 8 && lat <= 37 && lng >= 68 && lng <= 97) {
         if (lat >= 12.8 && lat <= 13.2 && lng >= 77.4 && lng <= 77.8) {
             return '📍 Bangalore, Karnataka, India';
-        } else if (lat >= 28.5 && lat <= 28.8 && lng >= 76.9 && lng <= 77.3) {
-            return '📍 Delhi, India';
-        } else if (lat >= 18.9 && lat <= 19.3 && lng >= 72.7 && lng <= 73.1) {
-            return '📍 Mumbai, Maharashtra, India';
-        } else if (lat >= 22.5 && lat <= 22.7 && lng >= 88.3 && lng <= 88.5) {
-            return '📍 Kolkata, West Bengal, India';
-        } else if (lat >= 13.0 && lat <= 13.2 && lng >= 80.1 && lng <= 80.3) {
-            return '📍 Chennai, Tamil Nadu, India';
-        } else {
-            return '📍 India';
         }
+        return '📍 India';
     }
     return '📍 Location Unknown';
 }
@@ -486,7 +478,7 @@ function getLocationName(lat, lng) {
 // ============================================
 
 function loadAllData() {
-    showToast('🔄 Loading data from Sheets and Firebase...', 'info');
+    showToast('🔄 Syncing live streams from system...', 'info');
     resetAllPaths();
     fetchSheetsData();
     listenToSensorData();
@@ -520,12 +512,30 @@ function resetAllPaths() {
 }
 
 // ============================================
-// FETCH SHEETS DATA
+// FETCH SHEETS DATA (LIVE API BYPASS ROUTE)
 // ============================================
 
 function fetchSheetsData() {
-    showToast('📊 Fetching historical data from Sheets...', 'info');
-    
+    // If you provided the Web App URL, fetch live data bypassing Google CDN caching delays
+    if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "PASTE_YOUR_DEPLOYED_WEB_APP_URL_HERE") {
+        showToast('📊 Fetching Real-Time Stream via Web App...', 'info');
+        fetch(`${APPS_SCRIPT_URL}?action=sensor`, { method: "GET", redirect: "follow" })
+            .then(res => res.json())
+            .then(json => {
+                if (json.success && json.data) {
+                    processIncomingPoint(json.data.lat, json.data.lng, new Date().toISOString());
+                } else {
+                    fallbackToCSV();
+                }
+            })
+            .catch(() => fallbackToCSV());
+    } else {
+        fallbackToCSV();
+    }
+}
+
+function fallbackToCSV() {
+    showToast('📊 Fetching data log sequence...', 'info');
     fetch(SHEETS_CSV_URL)
         .then(response => response.text())
         .then(csvText => {
@@ -535,33 +545,31 @@ function fetchSheetsData() {
                 sheetsLoaded = true;
                 updatePathUI();
                 renderCombinedPath();
-                showToast(`✅ Loaded ${points.length} points from Sheets`, 'success');
-                console.log(`📊 Loaded ${points.length} points from Sheets`);
+                showToast(`✅ Synced log indexes successfully`, 'success');
                 
-                // Zoom to the first point if available
-                if (points.length > 0) {
-                    const firstPoint = points[0];
-                    if (map && firstPoint.lat && firstPoint.lng) {
-                        map.setView([firstPoint.lat, firstPoint.lng], 16);
-                        const locationName = getLocationName(firstPoint.lat, firstPoint.lng);
-                        document.getElementById('locationInfo').textContent = locationName;
-                    }
+                const lastPoint = points[points.length - 1];
+                if (map && lastPoint.lat && lastPoint.lng) {
+                    map.setView([lastPoint.lat, lastPoint.lng], BANGALORE_ZOOM);
+                    document.getElementById('locationInfo').textContent = getLocationName(lastPoint.lat, lastPoint.lng);
                 }
             } else {
-                showToast('⚠️ No historical data found in Sheets', 'info');
-                // Zoom to India default
-                if (map) {
-                    map.setView(INDIA_CENTER, DEFAULT_ZOOM);
-                }
+                map.setView(BANGALORE_CENTER, BANGALORE_ZOOM);
             }
         })
         .catch(error => {
-            console.error('Error fetching sheets data:', error);
-            showToast('❌ Failed to load Sheets data: ' + error.message, 'error');
-            if (map) {
-                map.setView(INDIA_CENTER, DEFAULT_ZOOM);
-            }
+            showToast('❌ Failed to extract stream data', 'error');
+            map.setView(BANGALORE_CENTER, BANGALORE_ZOOM);
         });
+}
+
+function processIncomingPoint(lat, lng, timestamp) {
+    if(!lat || !lng || lat === 0 || lng === 0) return;
+    const point = { lat, lng, timestamp, source: 'sheets' };
+    allPathPoints.push(point);
+    sheetsLoaded = true;
+    updatePathUI();
+    renderCombinedPath();
+    map.setView([lat, lng], BANGALORE_ZOOM);
 }
 
 function parseCSVToPoints(csv) {
@@ -573,11 +581,9 @@ function parseCSVToPoints(csv) {
     
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
-        if (cols.length >= 3) {
-            const lat = parseFloat(cols[1]);
-            const lng = parseFloat(cols[2]);
-            const distance = parseFloat(cols[3]) || 0;
-            const totalDistVal = parseFloat(cols[4]) || 0;
+        if (cols.length >= 6) {
+            const lat = parseFloat(cols[4]); // Maps column index correctly to Latitude
+            const lng = parseFloat(cols[5]); // Maps column index correctly to Longitude
             const timestamp = cols[0] || new Date().toISOString();
             
             if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
@@ -585,26 +591,16 @@ function parseCSVToPoints(csv) {
                     lat: lat,
                     lng: lng,
                     timestamp: timestamp,
-                    distance: distance,
-                    totalDistance: totalDistVal,
                     source: 'sheets'
                 });
-                if (totalDistVal > 0) totalDist = totalDistVal;
             }
         }
     }
     
-    if (points.length > 0 && totalDist === 0) {
-        for (let i = 1; i < points.length; i++) {
-            const prev = points[i-1];
-            const curr = points[i];
-            const dist = calculateDistance(prev.lat, prev.lng, curr.lat, curr.lng);
-            totalDist += dist;
-            points[i].totalDistance = totalDist;
-        }
-    }
-    
     if (points.length > 0) {
+        for (let i = 1; i < points.length; i++) {
+            totalDist += calculateDistance(points[i-1].lat, points[i-1].lng, points[i].lat, points[i].lng);
+        }
         totalDistance = totalDist;
         pathStartTime = new Date(points[0].timestamp);
         pathEndTime = new Date(points[points.length - 1].timestamp);
@@ -619,12 +615,12 @@ function parseCSVToPoints(csv) {
 
 function initDashboard() {
     if (!mapInitialized && document.getElementById('map')) {
-        map = L.map('map').setView(INDIA_CENTER, DEFAULT_ZOOM);
+        map = L.map('map').setView(BANGALORE_CENTER, BANGALORE_ZOOM);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
-        marker = L.marker(INDIA_CENTER).addTo(map);
+        marker = L.marker(BANGALORE_CENTER).addTo(map);
         mapInitialized = true;
     } else if (mapInitialized && map) {
         setTimeout(() => map.invalidateSize(), 100);
@@ -632,29 +628,28 @@ function initDashboard() {
 }
 
 // ============================================
-// SENSOR DATA LISTENER
+// SENSOR DATA LISTENER (ROOT PATH PATHING FIX)
 // ============================================
 
 function listenToSensorData() {
-    if (sensorListener) {
-        try {
-            const ref = database.ref('device_profile/sensor_data');
-            ref.off('value', sensorListener);
-        } catch(e) {}
-        sensorListener = null;
-    }
+    stopListeners();
     
-    const sensorRef = database.ref('device_profile/sensor_data');
+    // CORRECTION: Pointing to root node '/sensor_data' to match real database updates
+    const sensorRef = database.ref('sensor_data'); 
     
     sensorListener = function(snapshot) {
         const data = snapshot.val();
         if (data) {
             relayState = data.relay_state || false;
             updateUI(data);
-            updateMap(data.lat || 20.5937, data.lng || 78.9629);
             
-            if (data.relay_state === true && data.lat && data.lng) {
-                trackLivePath(data.lat, data.lng);
+            const currentLat = data.lat || data.latitude;
+            const currentLng = data.lng || data.longitude;
+            
+            updateMap(currentLat, currentLng);
+            
+            if (data.relay_state === true && currentLat && currentLng) {
+                trackLivePath(currentLat, currentLng);
             } else if (isPathActive) {
                 finalizeLivePath();
             }
@@ -703,9 +698,7 @@ function trackLivePath(lat, lng) {
     if (allPathPoints.length > 1) {
         let dist = 0;
         for (let i = 1; i < allPathPoints.length; i++) {
-            const prev = allPathPoints[i-1];
-            const curr = allPathPoints[i];
-            dist += calculateDistance(prev.lat, prev.lng, curr.lat, curr.lng);
+            dist += calculateDistance(allPathPoints[i-1].lat, allPathPoints[i-1].lng, allPathPoints[i].lat, allPathPoints[i].lng);
         }
         totalDistance = dist;
     }
@@ -766,9 +759,8 @@ function renderCombinedPath() {
                 fillOpacity: 0.8
             }).addTo(map).bindPopup('📍 Start Point');
             markers.push(m);
-            map.setView([p.lat, p.lng], 16);
-            const locationName = getLocationName(p.lat, p.lng);
-            document.getElementById('locationInfo').textContent = locationName;
+            map.setView([p.lat, p.lng], BANGALORE_ZOOM);
+            document.getElementById('locationInfo').textContent = getLocationName(p.lat, p.lng);
         }
         return;
     }
@@ -823,10 +815,8 @@ function renderCombinedPath() {
     const bounds = L.latLngBounds(latlngs);
     map.fitBounds(bounds, { padding: [50, 50] });
     
-    // Update location info
     const center = bounds.getCenter();
-    const locationName = getLocationName(center.lat, center.lng);
-    document.getElementById('locationInfo').textContent = locationName;
+    document.getElementById('locationInfo').textContent = getLocationName(center.lat, center.lng);
 }
 
 // ============================================
@@ -842,18 +832,12 @@ function updateUI(data) {
         relayStatus.className = 'value ' + (data.relay_state ? 'green' : 'red');
     }
     
-    const accelValue = getEl('accelValue');
-    if (accelValue) {
-        const ax = data.accel_x || 0;
-        const ay = data.accel_y || 0;
-        const az = data.accel_z || 0;
-        const totalG = Math.sqrt(ax*ax + ay*ay + az*az) / 9.81;
-        accelValue.textContent = totalG.toFixed(2) + 'G';
-    }
+    const currentLat = data.lat || data.latitude || 0;
+    const currentLng = data.lng || data.longitude || 0;
     
     const gpsStatus = getEl('gpsStatus');
     if (gpsStatus) {
-        const gpsFixed = data.lat && data.lng && data.lat !== 0 && data.lng !== 0;
+        const gpsFixed = currentLat !== 0 && currentLng !== 0;
         gpsStatus.textContent = gpsFixed ? '📍 Fixed' : '⏳ Searching';
         gpsStatus.className = 'value ' + (gpsFixed ? 'green' : 'yellow');
     }
@@ -861,19 +845,18 @@ function updateUI(data) {
     const liveX = getEl('liveX'); if (liveX) liveX.textContent = (data.accel_x || 0).toFixed(2);
     const liveY = getEl('liveY'); if (liveY) liveY.textContent = (data.accel_y || 0).toFixed(2);
     const liveZ = getEl('liveZ'); if (liveZ) liveZ.textContent = (data.accel_z || 0).toFixed(2);
-    const liveLat = getEl('liveLat'); if (liveLat) liveLat.textContent = data.lat ? data.lat.toFixed(6) : '0.000000';
-    const liveLng = getEl('liveLng'); if (liveLng) liveLng.textContent = data.lng ? data.lng.toFixed(6) : '0.000000';
+    const liveLat = getEl('liveLat'); if (liveLat) liveLat.textContent = currentLat.toFixed(6);
+    const liveLng = getEl('liveLng'); if (liveLng) liveLng.textContent = currentLng.toFixed(6);
     const liveRelay = getEl('liveRelay'); if (liveRelay) liveRelay.textContent = data.relay_state ? 'ON' : 'OFF';
     const liveTime = getEl('liveTime'); if (liveTime) liveTime.textContent = new Date().toLocaleString();
 }
 
 function updateMap(lat, lng) {
-    if (lat !== 0 && lng !== 0 && marker && map) {
+    if (lat && lng && lat !== 0 && lng !== 0 && marker && map) {
         marker.setLatLng([lat, lng]);
         if (!isPathActive && allPathPoints.length === 0) {
-            map.setView([lat, lng], 16);
-            const locationName = getLocationName(lat, lng);
-            document.getElementById('locationInfo').textContent = locationName;
+            map.setView([lat, lng], BANGALORE_ZOOM);
+            document.getElementById('locationInfo').textContent = getLocationName(lat, lng);
         }
     }
 }
@@ -904,7 +887,7 @@ function clearPath() {
     if (confirm('Clear current path from map? (Sheets data will reload)')) {
         resetAllPaths();
         setTimeout(fetchSheetsData, 500);
-        showToast('🗑️ Path cleared, reloading Sheets data...', 'info');
+        showToast('🗑️ Path cleared, reloading active matrix...', 'info');
     }
 }
 
@@ -928,17 +911,8 @@ function showToast(message, type = 'info') {
 // ============================================
 
 window.addEventListener('beforeunload', function() {
-    if (sensorListener) {
-        try {
-            const ref = database.ref('device_profile/sensor_data');
-            ref.off('value', sensorListener);
-        } catch(e) {}
-        sensorListener = null;
-    }
+    stopListeners();
 });
-
-console.log('🚗 Combined Path Tracker Dashboard loaded!');
-console.log('📍 GPS coordinates: 12.972628, 77.652343 (Bangalore, India)');
 </script>
 </body>
 </html>
