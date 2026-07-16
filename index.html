@@ -628,14 +628,14 @@ function initDashboard() {
 }
 
 // ============================================
-// SENSOR DATA LISTENER (ROOT PATH PATHING FIX)
+// SENSOR DATA LISTENER (PATH ALIGNMENT FIX)
 // ============================================
 
 function listenToSensorData() {
     stopListeners();
     
-    // CORRECTION: Pointing to root node '/sensor_data' to match real database updates
-    const sensorRef = database.ref('sensor_data'); 
+    // CORRECTED PATH: Points directly inside the device_profile parent node
+    const sensorRef = database.ref('device_profile/sensor_data'); 
     
     sensorListener = function(snapshot) {
         const data = snapshot.val();
