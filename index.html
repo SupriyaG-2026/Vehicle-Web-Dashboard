@@ -516,22 +516,26 @@ function resetAllPaths() {
 // ============================================
 
 function fetchSheetsData() {
-    // If you provided the Web App URL, fetch live data bypassing Google CDN caching delays
-    if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== "PASTE_YOUR_DEPLOYED_WEB_APP_URL_HERE") {
-        showToast('📊 Fetching Real-Time Stream via Web App...', 'info');
-        fetch(`${APPS_SCRIPT_URL}?action=sensor`, { method: "GET", redirect: "follow" })
-            .then(res => res.json())
-            .then(json => {
-                if (json.success && json.data) {
-                    processIncomingPoint(json.data.lat, json.data.lng, new Date().toISOString());
-                } else {
-                    fallbackToCSV();
-                }
-            })
-            .catch(() => fallbackToCSV());
-    } else {
-        fallbackToCSV();
-    }
+    const url = "https://script.google.com/macros/s/AKfycbzNStk3ClNavNH71M8KJmg0r7J9x3nXBjgfM11x8GkmTcmpfB030SQPTYeXVCxvfrKq7A/exec?action=sensor";
+
+    fetch(url, {
+        method: "GET",
+        mode: "cors", // Explicitly enable CORS cross-origin requests
+        redirect: "follow" // CRITICAL: Tells the browser to transparently follow the 302 redirect
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("✅ Sheet data synced successfully:", data);
+        // Process and display your sensor metrics here...
+    })
+    .catch(error => {
+        console.error("❌ Failed fetching sheet data:", error);
+    });
 }
 
 function fallbackToCSV() {
