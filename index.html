@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Dashboard - Path Tracker</title>
+    <title>Vehicle Dashboard - Combined Path Tracker</title>
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -15,109 +15,30 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
+        /* --- Your existing CSS styles here --- */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0a0e17; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Login Screen */
-        #loginScreen {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            flex-grow: 1;
-            padding: 20px;
-        }
-        
-        .login-card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            text-align: center;
-        }
-        
+        #loginScreen { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; padding: 20px; }
+        .login-card { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 40px; border-radius: 16px; border: 1px solid rgba(0, 212, 255, 0.2); width: 100%; max-width: 400px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); text-align: center; }
         .login-card h2 { color: #00d4ff; margin-bottom: 10px; }
         .login-card p { color: #a0aec0; margin-bottom: 25px; font-size: 14px; }
-        
         .input-group { margin-bottom: 20px; text-align: left; }
         .input-group label { display: block; color: #a0aec0; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-        .input-group input {
-            width: 100%;
-            padding: 12px 16px;
-            background: #0f1123;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-        }
+        .input-group input { width: 100%; padding: 12px 16px; background: #0f1123; border: 1px solid rgba(0, 212, 255, 0.2); border-radius: 8px; color: #fff; font-size: 16px; outline: none; }
         .input-group input:focus { border-color: #00d4ff; box-shadow: 0 0 10px rgba(0, 212, 255, 0.2); }
-        
-        .login-btn {
-            width: 100%;
-            padding: 12px;
-            background: #00d4ff;
-            color: #0a0e17;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+        .login-btn { width: 100%; padding: 12px; background: #00d4ff; color: #0a0e17; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; }
         .login-btn:hover { background: #00b2d6; transform: translateY(-1px); }
-        
         #errorMessage { color: #fc8181; font-size: 14px; margin-top: 15px; display: none; }
-
-        /* Main Dashboard */
         #mainApp { display: none; width: 100%; }
-        
-        .navbar {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #00d4ff;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
+        .navbar { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00d4ff; flex-wrap: wrap; gap: 10px; }
         .navbar h1 { color: #00d4ff; font-size: 22px; }
         .navbar h1 span { color: #fff; }
-        
         .navbar .user-info { color: #a0aec0; font-size: 13px; }
-        .logout-btn {
-            background: transparent;
-            color: #fc8181;
-            border: 1px solid #fc8181;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
+        .logout-btn { background: transparent; color: #fc8181; border: 1px solid #fc8181; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
         .logout-btn:hover { background: rgba(252, 129, 129, 0.1); }
-        
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 212, 255, 0.1);
-        }
-        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 212, 255, 0.1); }
         .stat-card h3 { color: #a0aec0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
         .stat-card .value { font-size: 28px; font-weight: bold; margin-top: 5px; }
         .stat-card .value.green { color: #48bb78; }
@@ -125,100 +46,26 @@
         .stat-card .value.blue { color: #63b3ed; }
         .stat-card .value.yellow { color: #f6ad55; }
         .stat-card .value.purple { color: #9f7aea; }
-        
-        .row {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
-        }
-        
-        .card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.1);
-        }
-        
+        .row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; margin-bottom: 25px; }
+        .card { background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 12px; padding: 20px; border: 1px solid rgba(0, 212, 255, 0.1); }
         .card h2 { font-size: 16px; color: #00d4ff; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .card h2 .badge {
-            font-size: 11px;
-            padding: 2px 12px;
-            border-radius: 12px;
-            background: rgba(0, 212, 255, 0.15);
-            color: #00d4ff;
-        }
-        
+        .card h2 .badge { font-size: 11px; padding: 2px 12px; border-radius: 12px; background: rgba(0, 212, 255, 0.15); color: #00d4ff; }
         #map { height: 450px; border-radius: 8px; }
-        
-        .path-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .path-info .info-item {
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 6px;
-        }
-        
+        .path-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .path-info .info-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; }
         .path-info .info-item label { color: #a0aec0; font-size: 11px; display: block; }
         .path-info .info-item span { font-size: 16px; font-weight: bold; color: #e2e8f0; }
-        
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            padding: 15px 25px;
-            border-radius: 10px;
-            background: #1a1a2e;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            color: #fff;
-            display: none;
-            z-index: 999;
-            max-width: 400px;
-        }
+        .toast { position: fixed; bottom: 30px; right: 30px; padding: 15px 25px; border-radius: 10px; background: #1a1a2e; border: 1px solid rgba(0, 212, 255, 0.2); color: #fff; display: none; z-index: 999; max-width: 400px; }
         .toast.show { display: block; animation: slideIn 0.3s ease; }
         .toast.success { border-color: #48bb78; }
         .toast.error { border-color: #fc8181; }
         .toast.info { border-color: #63b3ed; }
-        
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .clear-btn {
-            background: rgba(252, 129, 129, 0.2);
-            color: #fc8181;
-            border: 1px solid rgba(252, 129, 129, 0.2);
-            padding: 4px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.3s;
-        }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .clear-btn { background: rgba(252, 129, 129, 0.2); color: #fc8181; border: 1px solid rgba(252, 129, 129, 0.2); padding: 4px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.3s; }
         .clear-btn:hover { background: rgba(252, 129, 129, 0.4); }
-        
-        .refresh-btn {
-            background: rgba(99, 179, 237, 0.2);
-            color: #63b3ed;
-            border: 1px solid rgba(99, 179, 237, 0.2);
-            padding: 4px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.3s;
-        }
+        .refresh-btn { background: rgba(99, 179, 237, 0.2); color: #63b3ed; border: 1px solid rgba(99, 179, 237, 0.2); padding: 4px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.3s; }
         .refresh-btn:hover { background: rgba(99, 179, 237, 0.4); }
-        
-        @media (max-width: 900px) {
-            .row { grid-template-columns: 1fr; }
-            .navbar { flex-direction: column; align-items: stretch; }
-            .path-info { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .row { grid-template-columns: 1fr; } .navbar { flex-direction: column; align-items: stretch; } .path-info { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -227,7 +74,7 @@
 <div id="loginScreen">
     <div class="login-card">
         <h2>🚗 Vehicle Tracker</h2>
-        <p>Sign in to track your vehicle path</p>
+        <p>Sign in to view live and historical path data</p>
         
         <div class="input-group">
             <label for="emailInput">Email Address</label>
@@ -259,50 +106,26 @@
 
         <!-- Stats -->
         <div class="stats">
-            <div class="stat-card">
-                <h3>Relay Status</h3>
-                <div class="value" id="relayStatus">--</div>
-            </div>
-            <div class="stat-card">
-                <h3>Path Points</h3>
-                <div class="value purple" id="pathCount">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Distance (km)</h3>
-                <div class="value blue" id="distanceValue">0.00</div>
-            </div>
-            <div class="stat-card">
-                <h3>GPS Status</h3>
-                <div class="value" id="gpsStatus">--</div>
-            </div>
+            <div class="stat-card"><h3>Relay Status</h3><div class="value" id="relayStatus">--</div></div>
+            <div class="stat-card"><h3>Path Points</h3><div class="value purple" id="pathCount">0</div></div>
+            <div class="stat-card"><h3>Distance (km)</h3><div class="value blue" id="distanceValue">0.00</div></div>
+            <div class="stat-card"><h3>GPS Status</h3><div class="value" id="gpsStatus">--</div></div>
         </div>
 
         <!-- Map & Info -->
         <div class="row">
             <div class="card">
                 <h2>
-                    📍 Path Map 
+                    📍 Combined Path
                     <span class="badge" id="pathStatus">⏹️ Stopped</span>
-                    <button class="refresh-btn" onclick="fetchSheetsData()" style="margin-left: auto;">🔄 Sync Sheets</button>
+                    <button class="refresh-btn" onclick="loadAllData()" style="margin-left: auto;">🔄 Refresh All</button>
                 </h2>
                 <div id="map"></div>
                 <div class="path-info">
-                    <div class="info-item">
-                        <label>Start Time</label>
-                        <span id="startTime">--</span>
-                    </div>
-                    <div class="info-item">
-                        <label>End Time</label>
-                        <span id="endTime">--</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Points Collected</label>
-                        <span id="pointCount">0</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Total Distance</label>
-                        <span id="totalDistance">0.00 km</span>
-                    </div>
+                    <div class="info-item"><label>Start Time</label><span id="startTime">--</span></div>
+                    <div class="info-item"><label>End Time</label><span id="endTime">--</span></div>
+                    <div class="info-item"><label>Points Collected</label><span id="pointCount">0</span></div>
+                    <div class="info-item"><label>Total Distance</label><span id="totalDistance">0.00 km</span></div>
                 </div>
             </div>
             <div class="card">
@@ -317,8 +140,7 @@
                     <p><strong>Last Update:</strong> <span id="liveTime">--</span></p>
                 </div>
                 <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="clear-btn" onclick="clearPath()">🗑️ Clear Path</button>
-                    <button class="refresh-btn" onclick="fetchSheetsData()">📊 Load Sheets Data</button>
+                    <button class="clear-btn" onclick="clearPath()">🗑️ Clear Current Path</button>
                 </div>
             </div>
         </div>
@@ -330,9 +152,10 @@
 // CONFIGURATION
 // ============================================
 
-// 🔴 IMPORTANT: Replace with your Google Sheets Public URL
-const GOOGLE_SHEETS_PUBLIC_URL = "https://docs.google.com/spreadsheets/d/1RyNM0QjxO-57Pp1063a2Z1caL9fs6EwjhnFjjYwCTWI/gviz/tq?tqx=out:json";
+// --- UPDATE THIS WITH YOUR SHEETS CSV URL ---
+const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBeHFigSw8HUlD9PmSIFC3qAVAI6L3HDKRs_hkQR9jZ6RQzWXxqazn_cb5VqhxC32s2yYGQZx3DLZw/pub?gid=0&single=true&output=csv";
 
+// --- YOUR FIREBASE CONFIG ---
 const firebaseConfig = {
     apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
     authDomain: "vehicle-web-dashboard.firebaseapp.com",
@@ -352,16 +175,18 @@ const auth = firebase.auth();
 // ============================================
 let map, marker, sensorListener;
 let mapInitialized = false;
-let pathPoints = [];
-let pathLine = null;
+let allPathPoints = [];        // Holds combined path (sheets + live)
+let livePathPoints = [];       // Holds points from current live session
 let isPathActive = false;
 let pathStartTime = null;
 let pathEndTime = null;
 let totalDistance = 0;
 let lastLat = null;
 let lastLng = null;
+let pathLine = null;
 let markers = [];
 let relayState = false;
+let sheetsLoaded = false;
 
 // ============================================
 // AUTHENTICATION
@@ -375,13 +200,13 @@ auth.onAuthStateChanged((user) => {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         initDashboard();
-        // Load sheets data on login
-        setTimeout(fetchSheetsData, 1000);
+        // Load all data on login
+        setTimeout(loadAllData, 1000);
     } else {
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
         stopListeners();
-        resetPath();
+        resetAllPaths();
     }
 });
 
@@ -428,24 +253,56 @@ function stopListeners() {
 }
 
 // ============================================
-// GOOGLE SHEETS DATA FETCH
+// LOAD ALL DATA (Sheets + Firebase)
+// ============================================
+
+function loadAllData() {
+    showToast('🔄 Loading data from Sheets and Firebase...', 'info');
+    resetAllPaths();
+    fetchSheetsData();
+    listenToSensorData();
+}
+
+function resetAllPaths() {
+    allPathPoints = [];
+    livePathPoints = [];
+    isPathActive = false;
+    totalDistance = 0;
+    lastLat = null;
+    lastLng = null;
+    pathStartTime = null;
+    pathEndTime = null;
+    
+    if (pathLine) { map.removeLayer(pathLine); pathLine = null; }
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    
+    document.getElementById('pathStatus').textContent = '⏹️ Stopped';
+    document.getElementById('pathStatus').style.color = '#fc8181';
+    updatePathUI();
+}
+
+// ============================================
+// FETCH & PARSE GOOGLE SHEETS CSV
 // ============================================
 
 function fetchSheetsData() {
-    showToast('📊 Fetching data from Google Sheets...', 'info');
+    showToast('📊 Fetching historical data from Sheets...', 'info');
     
-    fetch(GOOGLE_SHEETS_PUBLIC_URL)
+    fetch(SHEETS_CSV_URL)
         .then(response => response.text())
-        .then(text => {
-            // Parse Google Sheets JSONP response
-            const jsonStr = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
-            const data = JSON.parse(jsonStr);
-            
-            if (data && data.table && data.table.rows) {
-                processSheetsData(data.table.rows);
-                showToast('✅ Data loaded from Sheets!', 'success');
+        .then(csvText => {
+            const points = parseCSVToPoints(csvText);
+            if (points && points.length > 0) {
+                // Add sheets points to combined path
+                allPathPoints = points;
+                sheetsLoaded = true;
+                updatePathUI();
+                renderCombinedPath();
+                showToast(`✅ Loaded ${points.length} points from Sheets`, 'success');
+                console.log(`📊 Loaded ${points.length} points from Sheets`);
             } else {
-                showToast('⚠️ No data found in Sheets', 'error');
+                showToast('⚠️ No historical data found in Sheets', 'info');
             }
         })
         .catch(error => {
@@ -454,53 +311,63 @@ function fetchSheetsData() {
         });
 }
 
-function processSheetsData(rows) {
-    if (!rows || rows.length === 0) return;
+function parseCSVToPoints(csv) {
+    const lines = csv.split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 2) return [];
     
-    // Clear existing path
-    resetPath();
-    
-    // Parse rows (skip header row)
     const points = [];
     let totalDist = 0;
     
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (row.c && row.c.length >= 6) {
-            const timestamp = row.c[0]?.v || '';
-            const lat = parseFloat(row.c[1]?.v) || 0;
-            const lng = parseFloat(row.c[2]?.v) || 0;
-            const distance = parseFloat(row.c[3]?.v) || 0;
-            const totalDistVal = parseFloat(row.c[4]?.v) || 0;
+    // Skip header row (index 0)
+    for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        // Expecting: Timestamp, Latitude, Longitude, Distance, TotalDistance, PathID, RelayState
+        if (cols.length >= 3) {
+            const lat = parseFloat(cols[1]);
+            const lng = parseFloat(cols[2]);
+            const distance = parseFloat(cols[3]) || 0;
+            const totalDistVal = parseFloat(cols[4]) || 0;
+            const timestamp = cols[0] || new Date().toISOString();
             
-            if (lat !== 0 && lng !== 0) {
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
                 points.push({
                     lat: lat,
                     lng: lng,
                     timestamp: timestamp,
                     distance: distance,
-                    totalDistance: totalDistVal
+                    totalDistance: totalDistVal,
+                    source: 'sheets'
                 });
-                totalDist = totalDistVal;
+                if (totalDistVal > 0) totalDist = totalDistVal;
             }
         }
     }
     
+    // Calculate total distance if not provided
+    if (points.length > 0 && totalDist === 0) {
+        for (let i = 1; i < points.length; i++) {
+            const prev = points[i-1];
+            const curr = points[i];
+            const dist = calculateDistance(prev.lat, prev.lng, curr.lat, curr.lng);
+            totalDist += dist;
+            points[i].totalDistance = totalDist;
+        }
+    }
+    
+    // Set total distance
     if (points.length > 0) {
-        pathPoints = points;
         totalDistance = totalDist;
         pathStartTime = new Date(points[0].timestamp);
         pathEndTime = new Date(points[points.length - 1].timestamp);
-        
-        updatePathUI();
-        renderPathOnMap();
-        showToast(`✅ Loaded ${points.length} points from Sheets`, 'success');
     }
+    
+    return points;
 }
 
 // ============================================
 // DASHBOARD INIT
 // ============================================
+
 function initDashboard() {
     if (!mapInitialized && document.getElementById('map')) {
         map = L.map('map').setView([20.5937, 78.9629], 5);
@@ -513,12 +380,10 @@ function initDashboard() {
     } else if (mapInitialized && map) {
         setTimeout(() => map.invalidateSize(), 100);
     }
-    
-    listenToSensorData();
 }
 
 // ============================================
-// PATH TRACKING
+// REAL-TIME SENSOR DATA (Firebase)
 // ============================================
 
 function listenToSensorData() {
@@ -532,16 +397,20 @@ function listenToSensorData() {
             updateUI(data);
             updateMap(data.lat || 20.5937, data.lng || 78.9629);
             
-            if (data.relay_state === true) {
-                trackPath(data.lat, data.lng);
+            if (data.relay_state === true && data.lat && data.lng) {
+                trackLivePath(data.lat, data.lng);
             } else if (isPathActive) {
-                finalizePath();
+                finalizeLivePath();
             }
         }
     });
 }
 
-function trackPath(lat, lng) {
+// ============================================
+// LIVE PATH TRACKING
+// ============================================
+
+function trackLivePath(lat, lng) {
     if (!lat || !lng || lat === 0 || lng === 0) return;
     
     if (lastLat !== null && lastLng !== null) {
@@ -551,9 +420,7 @@ function trackPath(lat, lng) {
     
     if (!isPathActive) {
         isPathActive = true;
-        pathPoints = [];
-        pathStartTime = new Date();
-        totalDistance = 0;
+        livePathPoints = [];
         document.getElementById('pathStatus').textContent = '🟢 Recording';
         document.getElementById('pathStatus').style.color = '#48bb78';
         showToast('🟢 Path recording started!', 'success');
@@ -562,20 +429,40 @@ function trackPath(lat, lng) {
     const point = {
         lat: lat,
         lng: lng,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        source: 'live'
     };
     
-    pathPoints.push(point);
+    livePathPoints.push(point);
     lastLat = lat;
     lastLng = lng;
     
-    if (pathPoints.length > 1) {
-        const prev = pathPoints[pathPoints.length - 2];
-        totalDistance += calculateDistance(prev.lat, prev.lng, lat, lng);
+    // Rebuild combined path: sheets + live
+    allPathPoints = [...allPathPoints.filter(p => p.source === 'sheets'), ...livePathPoints];
+    
+    // Update total distance
+    if (allPathPoints.length > 1) {
+        let dist = 0;
+        for (let i = 1; i < allPathPoints.length; i++) {
+            const prev = allPathPoints[i-1];
+            const curr = allPathPoints[i];
+            dist += calculateDistance(prev.lat, prev.lng, curr.lat, curr.lng);
+        }
+        totalDistance = dist;
     }
     
     updatePathUI();
-    renderPathOnMap();
+    renderCombinedPath();
+}
+
+function finalizeLivePath() {
+    if (!isPathActive) return;
+    isPathActive = false;
+    document.getElementById('pathStatus').textContent = '⏹️ Stopped';
+    document.getElementById('pathStatus').style.color = '#fc8181';
+    showToast('⏹️ Path recording stopped', 'info');
+    lastLat = null;
+    lastLng = null;
 }
 
 function calculateDistance(lat1, lng1, lat2, lng2) {
@@ -589,22 +476,11 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
     return R * c;
 }
 
-function finalizePath() {
-    if (!isPathActive) return;
-    
-    isPathActive = false;
-    pathEndTime = new Date();
-    
-    document.getElementById('pathStatus').textContent = '⏹️ Stopped';
-    document.getElementById('pathStatus').style.color = '#fc8181';
-    
-    showToast('⏹️ Path recording stopped', 'info');
-    updatePathUI();
-    lastLat = null;
-    lastLng = null;
-}
+// ============================================
+// RENDER COMBINED PATH ON MAP
+// ============================================
 
-function renderPathOnMap() {
+function renderCombinedPath() {
     if (!map) return;
     
     if (pathLine) {
@@ -614,9 +490,9 @@ function renderPathOnMap() {
     markers.forEach(m => map.removeLayer(m));
     markers = [];
     
-    if (pathPoints.length < 2) {
-        if (pathPoints.length === 1) {
-            const p = pathPoints[0];
+    if (allPathPoints.length < 2) {
+        if (allPathPoints.length === 1) {
+            const p = allPathPoints[0];
             const m = L.circleMarker([p.lat, p.lng], {
                 radius: 8,
                 fillColor: '#00d4ff',
@@ -630,8 +506,13 @@ function renderPathOnMap() {
         return;
     }
     
-    const latlngs = pathPoints.map(p => [p.lat, p.lng]);
+    const latlngs = allPathPoints.map(p => [p.lat, p.lng]);
     
+    // Different colors for sheets vs live data
+    const sheetsPoints = allPathPoints.filter(p => p.source === 'sheets');
+    const livePoints = allPathPoints.filter(p => p.source === 'live');
+    
+    // Draw main path
     pathLine = L.polyline(latlngs, {
         color: '#00d4ff',
         weight: 4,
@@ -639,8 +520,9 @@ function renderPathOnMap() {
         lineJoin: 'round'
     }).addTo(map);
     
-    const first = pathPoints[0];
-    const last = pathPoints[pathPoints.length - 1];
+    // Start and End markers
+    const first = allPathPoints[0];
+    const last = allPathPoints[allPathPoints.length - 1];
     
     const startMarker = L.circleMarker([first.lat, first.lng], {
         radius: 10,
@@ -662,74 +544,25 @@ function renderPathOnMap() {
     }).addTo(map).bindPopup('🏁 End<br>' + new Date(last.timestamp).toLocaleString());
     markers.push(endMarker);
     
-    pathPoints.forEach((p, i) => {
-        if (i % 10 === 0 && i > 0 && i < pathPoints.length - 1) {
+    // Intermediate markers (every 10th point)
+    allPathPoints.forEach((p, i) => {
+        if (i % 10 === 0 && i > 0 && i < allPathPoints.length - 1) {
+            const color = p.source === 'sheets' ? '#9f7aea' : '#63b3ed';
             const m = L.circleMarker([p.lat, p.lng], {
-                radius: 4,
-                fillColor: '#63b3ed',
-                color: '#63b3ed',
+                radius: 5,
+                fillColor: color,
+                color: color,
                 weight: 1,
                 opacity: 0.6,
                 fillOpacity: 0.6
-            }).addTo(map).bindPopup('📍 Point ' + i);
+            }).addTo(map).bindPopup(`📍 ${p.source === 'sheets' ? 'Historical' : 'Live'} Point ${i}`);
             markers.push(m);
         }
     });
     
+    // Fit map to bounds
     const bounds = L.latLngBounds(latlngs);
     map.fitBounds(bounds, { padding: [50, 50] });
-}
-
-function updatePathUI() {
-    document.getElementById('pathCount').textContent = pathPoints.length;
-    document.getElementById('pointCount').textContent = pathPoints.length;
-    document.getElementById('totalDistance').textContent = totalDistance.toFixed(2) + ' km';
-    document.getElementById('distanceValue').textContent = totalDistance.toFixed(2);
-    
-    if (pathStartTime) {
-        document.getElementById('startTime').textContent = pathStartTime.toLocaleString();
-    }
-    if (pathEndTime) {
-        document.getElementById('endTime').textContent = pathEndTime.toLocaleString();
-    }
-}
-
-function resetPath() {
-    pathPoints = [];
-    isPathActive = false;
-    totalDistance = 0;
-    lastLat = null;
-    lastLng = null;
-    pathStartTime = null;
-    pathEndTime = null;
-    
-    if (pathLine) {
-        map.removeLayer(pathLine);
-        pathLine = null;
-    }
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-    
-    document.getElementById('pathStatus').textContent = '⏹️ Stopped';
-    document.getElementById('pathStatus').style.color = '#fc8181';
-    updatePathUI();
-}
-
-function clearPath() {
-    if (isPathActive) {
-        if (!confirm('Path is currently recording. Stop and clear?')) return;
-        finalizePath();
-    }
-    
-    if (pathPoints.length === 0) {
-        showToast('ℹ️ No path to clear', 'info');
-        return;
-    }
-    
-    if (confirm('Clear current path from map?')) {
-        resetPath();
-        showToast('🗑️ Path cleared from map', 'info');
-    }
 }
 
 // ============================================
@@ -743,7 +576,6 @@ function updateUI(data) {
     const ax = data.accel_x || 0;
     const ay = data.accel_y || 0;
     const az = data.accel_z || 0;
-    
     const totalG = Math.sqrt(ax*ax + ay*ay + az*az) / 9.81;
     document.getElementById('accelValue').textContent = totalG.toFixed(2) + 'G';
     
@@ -763,9 +595,42 @@ function updateUI(data) {
 function updateMap(lat, lng) {
     if (lat !== 0 && lng !== 0 && marker && map) {
         marker.setLatLng([lat, lng]);
-        if (!isPathActive) {
+        if (!isPathActive && allPathPoints.length === 0) {
             map.setView([lat, lng], 15);
         }
+    }
+}
+
+function updatePathUI() {
+    document.getElementById('pathCount').textContent = allPathPoints.length;
+    document.getElementById('pointCount').textContent = allPathPoints.length;
+    document.getElementById('totalDistance').textContent = totalDistance.toFixed(2) + ' km';
+    document.getElementById('distanceValue').textContent = totalDistance.toFixed(2);
+    
+    if (pathStartTime) {
+        document.getElementById('startTime').textContent = pathStartTime.toLocaleString();
+    }
+    if (pathEndTime) {
+        document.getElementById('endTime').textContent = pathEndTime.toLocaleString();
+    }
+}
+
+function clearPath() {
+    if (isPathActive) {
+        if (!confirm('Path is currently recording. Stop and clear?')) return;
+        finalizeLivePath();
+    }
+    
+    if (allPathPoints.length === 0) {
+        showToast('ℹ️ No path to clear', 'info');
+        return;
+    }
+    
+    if (confirm('Clear current path from map? (Sheets data will reload)')) {
+        resetAllPaths();
+        // Reload sheets data after clearing
+        setTimeout(fetchSheetsData, 500);
+        showToast('🗑️ Path cleared, reloading Sheets data...', 'info');
     }
 }
 
@@ -789,9 +654,8 @@ function showToast(message, type = 'info') {
 
 window.addEventListener('beforeunload', stopListeners);
 
-console.log('🚗 Path Tracker Dashboard loaded!');
-console.log('📡 Tracking path when Relay is ON');
-console.log('📊 Fetching data from Google Sheets...');
+console.log('🚗 Combined Path Tracker Dashboard loaded!');
+console.log('📊 Fetching from Sheets and Firebase...');
 </script>
 </body>
 </html>
