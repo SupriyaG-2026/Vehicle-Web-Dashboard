@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Dashboard - Secure Admin Panel</title>
+    <title>Vehicle Dashboard - Path Tracker</title>
     
-    <!-- Firebase SDKs (Compat v9) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -18,7 +18,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0a0e17; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* Login Screen Styling */
+        /* Login Screen */
         #loginScreen {
             display: flex;
             flex-direction: column;
@@ -39,12 +39,11 @@
             text-align: center;
         }
         
-        .login-card h2 { color: #00d4ff; margin-bottom: 10px; font-size: 24px; }
+        .login-card h2 { color: #00d4ff; margin-bottom: 10px; }
         .login-card p { color: #a0aec0; margin-bottom: 25px; font-size: 14px; }
         
         .input-group { margin-bottom: 20px; text-align: left; }
         .input-group label { display: block; color: #a0aec0; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-        
         .input-group input {
             width: 100%;
             padding: 12px 16px;
@@ -54,7 +53,6 @@
             color: #fff;
             font-size: 16px;
             outline: none;
-            transition: all 0.3s ease;
         }
         .input-group input:focus { border-color: #00d4ff; box-shadow: 0 0 10px rgba(0, 212, 255, 0.2); }
         
@@ -74,7 +72,7 @@
         
         #errorMessage { color: #fc8181; font-size: 14px; margin-top: 15px; display: none; }
 
-        /* Main Dashboard (Hidden by default) */
+        /* Main Dashboard */
         #mainApp { display: none; width: 100%; }
         
         .navbar {
@@ -91,6 +89,7 @@
         .navbar h1 { color: #00d4ff; font-size: 22px; }
         .navbar h1 span { color: #fff; }
         
+        .navbar .user-info { color: #a0aec0; font-size: 13px; }
         .logout-btn {
             background: transparent;
             color: #fc8181;
@@ -125,10 +124,11 @@
         .stat-card .value.red { color: #fc8181; }
         .stat-card .value.blue { color: #63b3ed; }
         .stat-card .value.yellow { color: #f6ad55; }
+        .stat-card .value.purple { color: #9f7aea; }
         
         .row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.5fr 1fr;
             gap: 25px;
             margin-bottom: 25px;
         }
@@ -140,8 +140,32 @@
             border: 1px solid rgba(0, 212, 255, 0.1);
         }
         
-        .card h2 { font-size: 16px; color: #00d4ff; margin-bottom: 15px; }
-        #map { height: 350px; border-radius: 8px; }
+        .card h2 { font-size: 16px; color: #00d4ff; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .card h2 .badge {
+            font-size: 11px;
+            padding: 2px 12px;
+            border-radius: 12px;
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+        }
+        
+        #map { height: 450px; border-radius: 8px; }
+        
+        .path-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .path-info .info-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .path-info .info-item label { color: #a0aec0; font-size: 11px; display: block; }
+        .path-info .info-item span { font-size: 16px; font-weight: bold; color: #e2e8f0; }
         
         .toast {
             position: fixed;
@@ -157,15 +181,43 @@
             max-width: 400px;
         }
         .toast.show { display: block; animation: slideIn 0.3s ease; }
+        .toast.success { border-color: #48bb78; }
+        .toast.error { border-color: #fc8181; }
+        .toast.info { border-color: #63b3ed; }
         
         @keyframes slideIn {
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
         
+        .clear-btn {
+            background: rgba(252, 129, 129, 0.2);
+            color: #fc8181;
+            border: 1px solid rgba(252, 129, 129, 0.2);
+            padding: 4px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.3s;
+        }
+        .clear-btn:hover { background: rgba(252, 129, 129, 0.4); }
+        
+        .refresh-btn {
+            background: rgba(99, 179, 237, 0.2);
+            color: #63b3ed;
+            border: 1px solid rgba(99, 179, 237, 0.2);
+            padding: 4px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.3s;
+        }
+        .refresh-btn:hover { background: rgba(99, 179, 237, 0.4); }
+        
         @media (max-width: 900px) {
             .row { grid-template-columns: 1fr; }
             .navbar { flex-direction: column; align-items: stretch; }
+            .path-info { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -174,8 +226,8 @@
 <!-- Login Screen -->
 <div id="loginScreen">
     <div class="login-card">
-        <h2>System Verification</h2>
-        <p>Sign in using your Firebase Auth account</p>
+        <h2>🚗 Vehicle Tracker</h2>
+        <p>Sign in to track your vehicle path</p>
         
         <div class="input-group">
             <label for="emailInput">Email Address</label>
@@ -187,44 +239,71 @@
             <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
         </div>
         
-        <button class="login-btn" id="loginBtn" onclick="handleLogin()">Unlock Dashboard</button>
+        <button class="login-btn" id="loginBtn" onclick="handleLogin()">🔐 Unlock Dashboard</button>
         <div id="errorMessage"></div>
     </div>
 </div>
 
-<!-- Main App Dashboard -->
+<!-- Main Dashboard -->
 <div id="mainApp">
     <nav class="navbar">
-        <h1>🚗 Vehicle <span>Dashboard</span></h1>
-        <button class="logout-btn" onclick="handleLogout()">Lock Dashboard</button>
+        <h1>🚗 Path <span>Tracker</span></h1>
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <span class="user-info" id="userEmail">Loading...</span>
+            <button class="logout-btn" onclick="handleLogout()">🚪 Lock</button>
+        </div>
     </nav>
 
     <div class="container">
         <div id="toast" class="toast"></div>
 
+        <!-- Stats -->
         <div class="stats">
             <div class="stat-card">
                 <h3>Relay Status</h3>
                 <div class="value" id="relayStatus">--</div>
             </div>
             <div class="stat-card">
-                <h3>Acceleration (G)</h3>
-                <div class="value blue" id="accelValue">0.00</div>
+                <h3>Path Points</h3>
+                <div class="value purple" id="pathCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Distance (km)</h3>
+                <div class="value blue" id="distanceValue">0.00</div>
             </div>
             <div class="stat-card">
                 <h3>GPS Status</h3>
                 <div class="value" id="gpsStatus">--</div>
             </div>
-            <div class="stat-card">
-                <h3>Fingerprints</h3>
-                <div class="value green" id="fpCount">0</div>
-            </div>
         </div>
 
+        <!-- Map & Info -->
         <div class="row">
             <div class="card">
-                <h2>📍 Live Location</h2>
+                <h2>
+                    📍 Path Map 
+                    <span class="badge" id="pathStatus">⏹️ Stopped</span>
+                    <button class="refresh-btn" onclick="fetchSheetsData()" style="margin-left: auto;">🔄 Sync Sheets</button>
+                </h2>
                 <div id="map"></div>
+                <div class="path-info">
+                    <div class="info-item">
+                        <label>Start Time</label>
+                        <span id="startTime">--</span>
+                    </div>
+                    <div class="info-item">
+                        <label>End Time</label>
+                        <span id="endTime">--</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Points Collected</label>
+                        <span id="pointCount">0</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Total Distance</label>
+                        <span id="totalDistance">0.00 km</span>
+                    </div>
+                </div>
             </div>
             <div class="card">
                 <h2>📡 Live Sensor Data</h2>
@@ -237,6 +316,10 @@
                     <p><strong>Relay:</strong> <span id="liveRelay">--</span></p>
                     <p><strong>Last Update:</strong> <span id="liveTime">--</span></p>
                 </div>
+                <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="clear-btn" onclick="clearPath()">🗑️ Clear Path</button>
+                    <button class="refresh-btn" onclick="fetchSheetsData()">📊 Load Sheets Data</button>
+                </div>
             </div>
         </div>
     </div>
@@ -246,14 +329,18 @@
 // ============================================
 // CONFIGURATION
 // ============================================
+
+// 🔴 IMPORTANT: Replace with your Google Sheets Public URL
+const GOOGLE_SHEETS_PUBLIC_URL = "https://docs.google.com/spreadsheets/d/1RyNM0QjxO-57Pp1063a2Z1caL9fs6EwjhnFjjYwCTWI/gviz/tq?tqx=out:json";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
-  authDomain: "vehicle-web-dashboard.firebaseapp.com",
-  databaseURL: "https://vehicle-web-dashboard-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "vehicle-web-dashboard",
-  storageBucket: "vehicle-web-dashboard.firebasestorage.app",
-  messagingSenderId: "890756908626",
-  appId: "1:890756908626:web:8a1f205b40fe265134c18b"
+    apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
+    authDomain: "vehicle-web-dashboard.firebaseapp.com",
+    databaseURL: "https://vehicle-web-dashboard-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "vehicle-web-dashboard",
+    storageBucket: "vehicle-web-dashboard.firebasestorage.app",
+    messagingSenderId: "890756908626",
+    appId: "1:890756908626:web:8a1f205b40fe265134c18b"
 };
     
 firebase.initializeApp(firebaseConfig);
@@ -263,26 +350,38 @@ const auth = firebase.auth();
 // ============================================
 // STATE
 // ============================================
-let map, marker, sensorListener, fpListener;
+let map, marker, sensorListener;
 let mapInitialized = false;
+let pathPoints = [];
+let pathLine = null;
+let isPathActive = false;
+let pathStartTime = null;
+let pathEndTime = null;
+let totalDistance = 0;
+let lastLat = null;
+let lastLng = null;
+let markers = [];
+let relayState = false;
 
 // ============================================
-// AUTHENTICATION LOGIC
+// AUTHENTICATION
 // ============================================
 
-// Monitor real-time Auth state changes
+auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+
 auth.onAuthStateChanged((user) => {
     if (user) {
-        // Logged In successfully
-        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('userEmail').textContent = user.email || 'Admin';
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         initDashboard();
+        // Load sheets data on login
+        setTimeout(fetchSheetsData, 1000);
     } else {
-        // Logged out / UI reset
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
         stopListeners();
+        resetPath();
     }
 });
 
@@ -301,42 +400,106 @@ function handleLogin() {
     loginBtn.disabled = true;
     loginBtn.textContent = "Verifying...";
 
-    // 1. Explicitly set local persistence to NONE (No auto-login on refresh)
-    auth.setPersistence(firebase.auth.Auth.Persistence.NONE)
+    auth.signInWithEmailAndPassword(email, password)
         .then(() => {
-            // 2. Run actual sign-in method
-            return auth.signInWithEmailAndPassword(email, password);
-        })
-        .then(() => {
-            // Success logic handled globally by onAuthStateChanged
             loginBtn.disabled = false;
-            loginBtn.textContent = "Unlock Dashboard";
+            loginBtn.textContent = "🔐 Unlock Dashboard";
             document.getElementById('passwordInput').value = '';
+            errorDiv.style.display = 'none';
         })
         .catch((error) => {
             loginBtn.disabled = false;
-            loginBtn.textContent = "Unlock Dashboard";
+            loginBtn.textContent = "🔐 Unlock Dashboard";
             errorDiv.textContent = "⚠️ " + error.message;
             errorDiv.style.display = 'block';
-            document.getElementById('passwordInput').value = '';
         });
 }
 
-// Add Enter key listeners to inputs
-document.getElementById('passwordInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') handleLogin(); });
-document.getElementById('emailInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('passwordInput').addEventListener('keypress', function(e) { 
+    if (e.key === 'Enter') handleLogin(); 
+});
 
 function handleLogout() {
     auth.signOut().catch(err => console.error("Signout error:", err));
 }
 
 function stopListeners() {
-    if (sensorListener) sensorListener.off();
-    if (fpListener) fpListener.off();
+    if (sensorListener) { sensorListener.off(); sensorListener = null; }
 }
 
 // ============================================
-// DASHBOARD INITIALIZATION
+// GOOGLE SHEETS DATA FETCH
+// ============================================
+
+function fetchSheetsData() {
+    showToast('📊 Fetching data from Google Sheets...', 'info');
+    
+    fetch(GOOGLE_SHEETS_PUBLIC_URL)
+        .then(response => response.text())
+        .then(text => {
+            // Parse Google Sheets JSONP response
+            const jsonStr = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
+            const data = JSON.parse(jsonStr);
+            
+            if (data && data.table && data.table.rows) {
+                processSheetsData(data.table.rows);
+                showToast('✅ Data loaded from Sheets!', 'success');
+            } else {
+                showToast('⚠️ No data found in Sheets', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching sheets data:', error);
+            showToast('❌ Failed to load Sheets data: ' + error.message, 'error');
+        });
+}
+
+function processSheetsData(rows) {
+    if (!rows || rows.length === 0) return;
+    
+    // Clear existing path
+    resetPath();
+    
+    // Parse rows (skip header row)
+    const points = [];
+    let totalDist = 0;
+    
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.c && row.c.length >= 6) {
+            const timestamp = row.c[0]?.v || '';
+            const lat = parseFloat(row.c[1]?.v) || 0;
+            const lng = parseFloat(row.c[2]?.v) || 0;
+            const distance = parseFloat(row.c[3]?.v) || 0;
+            const totalDistVal = parseFloat(row.c[4]?.v) || 0;
+            
+            if (lat !== 0 && lng !== 0) {
+                points.push({
+                    lat: lat,
+                    lng: lng,
+                    timestamp: timestamp,
+                    distance: distance,
+                    totalDistance: totalDistVal
+                });
+                totalDist = totalDistVal;
+            }
+        }
+    }
+    
+    if (points.length > 0) {
+        pathPoints = points;
+        totalDistance = totalDist;
+        pathStartTime = new Date(points[0].timestamp);
+        pathEndTime = new Date(points[points.length - 1].timestamp);
+        
+        updatePathUI();
+        renderPathOnMap();
+        showToast(`✅ Loaded ${points.length} points from Sheets`, 'success');
+    }
+}
+
+// ============================================
+// DASHBOARD INIT
 // ============================================
 function initDashboard() {
     if (!mapInitialized && document.getElementById('map')) {
@@ -348,39 +511,230 @@ function initDashboard() {
         marker = L.marker([20.5937, 78.9629]).addTo(map);
         mapInitialized = true;
     } else if (mapInitialized && map) {
-        setTimeout(() => { map.invalidateSize(); }, 100);
+        setTimeout(() => map.invalidateSize(), 100);
     }
     
     listenToSensorData();
-    listenToFingerprints();
 }
+
+// ============================================
+// PATH TRACKING
+// ============================================
 
 function listenToSensorData() {
     if (sensorListener) sensorListener.off();
     
-    const sensorRef = database.ref('sensor_data');
+    const sensorRef = database.ref('device_profile/sensor_data');
     sensorListener = sensorRef.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
+            relayState = data.relay_state || false;
             updateUI(data);
             updateMap(data.lat || 20.5937, data.lng || 78.9629);
+            
+            if (data.relay_state === true) {
+                trackPath(data.lat, data.lng);
+            } else if (isPathActive) {
+                finalizePath();
+            }
         }
     });
 }
 
-function listenToFingerprints() {
-    if (fpListener) fpListener.off();
+function trackPath(lat, lng) {
+    if (!lat || !lng || lat === 0 || lng === 0) return;
     
-    const fpRef = database.ref('fingerprints');
-    fpListener = fpRef.on('value', snapshot => {
-        const data = snapshot.val();
-        if (data) {
-            document.getElementById('fpCount').textContent = Object.values(data).length;
-        } else {
-            document.getElementById('fpCount').textContent = '0';
+    if (lastLat !== null && lastLng !== null) {
+        const dist = calculateDistance(lastLat, lastLng, lat, lng);
+        if (dist < 0.001) return;
+    }
+    
+    if (!isPathActive) {
+        isPathActive = true;
+        pathPoints = [];
+        pathStartTime = new Date();
+        totalDistance = 0;
+        document.getElementById('pathStatus').textContent = '🟢 Recording';
+        document.getElementById('pathStatus').style.color = '#48bb78';
+        showToast('🟢 Path recording started!', 'success');
+    }
+    
+    const point = {
+        lat: lat,
+        lng: lng,
+        timestamp: new Date().toISOString()
+    };
+    
+    pathPoints.push(point);
+    lastLat = lat;
+    lastLng = lng;
+    
+    if (pathPoints.length > 1) {
+        const prev = pathPoints[pathPoints.length - 2];
+        totalDistance += calculateDistance(prev.lat, prev.lng, lat, lng);
+    }
+    
+    updatePathUI();
+    renderPathOnMap();
+}
+
+function calculateDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+function finalizePath() {
+    if (!isPathActive) return;
+    
+    isPathActive = false;
+    pathEndTime = new Date();
+    
+    document.getElementById('pathStatus').textContent = '⏹️ Stopped';
+    document.getElementById('pathStatus').style.color = '#fc8181';
+    
+    showToast('⏹️ Path recording stopped', 'info');
+    updatePathUI();
+    lastLat = null;
+    lastLng = null;
+}
+
+function renderPathOnMap() {
+    if (!map) return;
+    
+    if (pathLine) {
+        map.removeLayer(pathLine);
+        pathLine = null;
+    }
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    
+    if (pathPoints.length < 2) {
+        if (pathPoints.length === 1) {
+            const p = pathPoints[0];
+            const m = L.circleMarker([p.lat, p.lng], {
+                radius: 8,
+                fillColor: '#00d4ff',
+                color: '#00d4ff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map).bindPopup('📍 Start Point');
+            markers.push(m);
+        }
+        return;
+    }
+    
+    const latlngs = pathPoints.map(p => [p.lat, p.lng]);
+    
+    pathLine = L.polyline(latlngs, {
+        color: '#00d4ff',
+        weight: 4,
+        opacity: 0.8,
+        lineJoin: 'round'
+    }).addTo(map);
+    
+    const first = pathPoints[0];
+    const last = pathPoints[pathPoints.length - 1];
+    
+    const startMarker = L.circleMarker([first.lat, first.lng], {
+        radius: 10,
+        fillColor: '#48bb78',
+        color: '#48bb78',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9
+    }).addTo(map).bindPopup('🏁 Start<br>' + new Date(first.timestamp).toLocaleString());
+    markers.push(startMarker);
+    
+    const endMarker = L.circleMarker([last.lat, last.lng], {
+        radius: 10,
+        fillColor: '#fc8181',
+        color: '#fc8181',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9
+    }).addTo(map).bindPopup('🏁 End<br>' + new Date(last.timestamp).toLocaleString());
+    markers.push(endMarker);
+    
+    pathPoints.forEach((p, i) => {
+        if (i % 10 === 0 && i > 0 && i < pathPoints.length - 1) {
+            const m = L.circleMarker([p.lat, p.lng], {
+                radius: 4,
+                fillColor: '#63b3ed',
+                color: '#63b3ed',
+                weight: 1,
+                opacity: 0.6,
+                fillOpacity: 0.6
+            }).addTo(map).bindPopup('📍 Point ' + i);
+            markers.push(m);
         }
     });
+    
+    const bounds = L.latLngBounds(latlngs);
+    map.fitBounds(bounds, { padding: [50, 50] });
 }
+
+function updatePathUI() {
+    document.getElementById('pathCount').textContent = pathPoints.length;
+    document.getElementById('pointCount').textContent = pathPoints.length;
+    document.getElementById('totalDistance').textContent = totalDistance.toFixed(2) + ' km';
+    document.getElementById('distanceValue').textContent = totalDistance.toFixed(2);
+    
+    if (pathStartTime) {
+        document.getElementById('startTime').textContent = pathStartTime.toLocaleString();
+    }
+    if (pathEndTime) {
+        document.getElementById('endTime').textContent = pathEndTime.toLocaleString();
+    }
+}
+
+function resetPath() {
+    pathPoints = [];
+    isPathActive = false;
+    totalDistance = 0;
+    lastLat = null;
+    lastLng = null;
+    pathStartTime = null;
+    pathEndTime = null;
+    
+    if (pathLine) {
+        map.removeLayer(pathLine);
+        pathLine = null;
+    }
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    
+    document.getElementById('pathStatus').textContent = '⏹️ Stopped';
+    document.getElementById('pathStatus').style.color = '#fc8181';
+    updatePathUI();
+}
+
+function clearPath() {
+    if (isPathActive) {
+        if (!confirm('Path is currently recording. Stop and clear?')) return;
+        finalizePath();
+    }
+    
+    if (pathPoints.length === 0) {
+        showToast('ℹ️ No path to clear', 'info');
+        return;
+    }
+    
+    if (confirm('Clear current path from map?')) {
+        resetPath();
+        showToast('🗑️ Path cleared from map', 'info');
+    }
+}
+
+// ============================================
+// UI UPDATE FUNCTIONS
+// ============================================
 
 function updateUI(data) {
     document.getElementById('relayStatus').textContent = data.relay_state ? '🟢 ON' : '🔴 OFF';
@@ -409,11 +763,35 @@ function updateUI(data) {
 function updateMap(lat, lng) {
     if (lat !== 0 && lng !== 0 && marker && map) {
         marker.setLatLng([lat, lng]);
-        map.setView([lat, lng], 15);
+        if (!isPathActive) {
+            map.setView([lat, lng], 15);
+        }
     }
 }
 
+// ============================================
+// TOAST NOTIFICATION
+// ============================================
+
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast show ' + type;
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+        toast.className = 'toast';
+    }, 4000);
+}
+
+// ============================================
+// CLEANUP
+// ============================================
+
 window.addEventListener('beforeunload', stopListeners);
+
+console.log('🚗 Path Tracker Dashboard loaded!');
+console.log('📡 Tracking path when Relay is ON');
+console.log('📊 Fetching data from Google Sheets...');
 </script>
 </body>
 </html>
