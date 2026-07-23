@@ -37,6 +37,10 @@
         .navbar h1{color:var(--accent);font-size:20px}
         .logout-btn{background:transparent;color:var(--red);border:1px solid var(--red);padding:6px 16px;border-radius:6px;cursor:pointer}
         .show-all-btn{background:var(--accent);color:#0a0e17;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px}
+        .tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)}
+        .tab{padding:12px 24px;cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s;background:transparent;border-top:none;border-left:none;border-right:none}
+        .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+        .tab:hover{color:var(--text)}
         .container{max-width:1400px;margin:20px auto;padding:0 20px}
         .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
         .stat{background:var(--card);padding:16px;border-radius:10px;border:1px solid var(--border);text-align:center}
@@ -60,10 +64,22 @@
         .live-on{background:var(--green);animation:pulse 1.5s infinite}
         .live-off{background:var(--red)}
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.6)}}
+        @keyframes bluePulse{0%{transform:translate(-50%,-50%) scale(0.5);opacity:1}100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
         .map-legend{font-size:11px;color:var(--muted);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap}
         .legend-item{display:flex;align-items:center;gap:4px}
         .legend-dot{width:12px;height:12px;border-radius:50%}
         .legend-dot.live{background:#4285F4;box-shadow:0 0 8px #4285F4}
+        .data-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+        .data-table th{background:rgba(0,212,255,.1);color:var(--accent);padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;position:sticky;top:0;z-index:2}
+        .data-table th:hover{background:rgba(0,212,255,.2)}
+        .data-table td{padding:8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+        .data-table tr:hover td{background:rgba(255,255,255,.03)}
+        .data-table .relay-true{color:var(--green);font-weight:600}
+        .data-table .relay-false{color:var(--red)}
+        .table-wrap{max-height:500px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+        .sheet-info{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+        .refresh-sheet-btn{background:rgba(99,179,237,.2);color:#63b3ed;border:1px solid rgba(99,179,237,.2);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px}
+        .search-box{background:#0f1123;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;width:200px;font-size:13px}
     </style>
 </head>
 <body>
@@ -88,30 +104,71 @@
             <button class="logout-btn" onclick="auth.signOut()">🚪 Logout</button>
         </div>
     </nav>
+
+    <!-- TABS -->
     <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('map')" id="tabMap">🗺️ Live Map & Trips</button>
+            <button class="tab" onclick="switchTab('sheets')" id="tabSheets">📊 Sheets Log</button>
+        </div>
+    </div>
+
+    <!-- MAP TAB -->
+    <div id="tabContentMap" class="container">
         <div class="stat-row">
             <div class="stat"><h3>Engine</h3><div class="val" id="stEngine">--</div></div>
             <div class="stat"><h3>Speed</h3><div class="val blue" id="stSpeed">--</div></div>
             <div class="stat"><h3>GPS</h3><div class="val" id="stGPS">--</div></div>
-            <div class="stat"><h3>Current Driver</h3><div class="val" style="font-size:16px" id="stDriver">--</div></div>
-            <div class="stat"><h3>Trips Today</h3><div class="val yellow" id="stTrips">0</div></div>
+            <div class="stat"><h3>Driver</h3><div class="val" style="font-size:16px" id="stDriver">--</div></div>
+            <div class="stat"><h3>Trips</h3><div class="val yellow" id="stTrips">0</div></div>
         </div>
         <div class="row">
             <div class="card">
-                <h2>
-                    📍 Live Map
-                    <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto">🗺️ Show All Trips</button>
-                </h2>
+                <h2>📍 Live Map <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto">🗺️ Show All</button></h2>
                 <div id="map"></div>
                 <div class="map-legend">
-                    <div class="legend-item"><div class="legend-dot live"></div> Live Location</div>
-                    <div class="legend-item"><div style="width:12px;height:3px;background:#f6ad55;border-radius:2px"></div> Selected Trip</div>
-                    <div class="legend-item"><div style="width:12px;height:3px;background:var(--green);border-radius:2px"></div> Other Trips</div>
+                    <div class="legend-item"><div class="legend-dot live"></div> Live</div>
+                    <div class="legend-item"><div style="width:12px;height:3px;background:#f6ad55;border-radius:2px"></div> Selected</div>
                 </div>
             </div>
             <div class="card">
-                <h2>📋 Trip History <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto;font-size:11px">🗺️ Show All</button></h2>
-                <div class="trip-list" id="tripList"><div style="color:var(--muted);text-align:center;padding:20px">Loading trips...</div></div>
+                <h2>📋 Trips <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto;font-size:11px">🗺️ All</button></h2>
+                <div class="trip-list" id="tripList"><div style="color:var(--muted);text-align:center;padding:20px">Loading...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHEETS TAB -->
+    <div id="tabContentSheets" class="container" style="display:none">
+        <div class="card">
+            <h2>📊 Google Sheets Log</h2>
+            <div class="sheet-info">
+                <span id="sheetRowCount">0 rows loaded</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input class="search-box" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()">
+                    <button class="refresh-sheet-btn" onclick="loadSheetData()">🔄 Refresh</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Timestamp ↕</th>
+                            <th onclick="sortTable(1)">Accel X</th>
+                            <th onclick="sortTable(2)">Accel Y</th>
+                            <th onclick="sortTable(3)">Accel Z</th>
+                            <th onclick="sortTable(4)">Driver</th>
+                            <th onclick="sortTable(5)">Latitude</th>
+                            <th onclick="sortTable(6)">Longitude</th>
+                            <th onclick="sortTable(7)">Speed</th>
+                            <th onclick="sortTable(8)">Relay</th>
+                            <th onclick="sortTable(9)">Run Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading sheet data...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -137,9 +194,12 @@ const db = firebase.database();
 // ===== STATE =====
 let map, liveMarker, liveCircle, pathLines = [], tripMarkers = [];
 let trips = [];
-let selectedTripIndex = -1;    // -1 = show all, >=0 = zoomed to one trip
+let selectedTripIndex = -1;
 let liveRelayState = false;
-let isFollowingLive = true;    // true = map follows live marker
+let isFollowingLive = true;
+let allSheetRows = [];
+let sortColumn = 0;
+let sortAsc = false;
 
 // ===== AUTH =====
 auth.onAuthStateChanged(user => {
@@ -165,13 +225,21 @@ function login() {
 }
 document.getElementById('passInput').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
 
+// ===== TABS =====
+function switchTab(tab) {
+    document.getElementById('tabMap').classList.toggle('active', tab === 'map');
+    document.getElementById('tabSheets').classList.toggle('active', tab === 'sheets');
+    document.getElementById('tabContentMap').style.display = tab === 'map' ? 'block' : 'none';
+    document.getElementById('tabContentSheets').style.display = tab === 'sheets' ? 'block' : 'none';
+    if (tab === 'map' && map) setTimeout(() => map.invalidateSize(), 200);
+    if (tab === 'sheets') loadSheetData();
+}
+
 // ===== INIT =====
 function initDashboard() {
     if (!map) {
         map = L.map('map').setView([12.9716, 77.5946], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
-        
-        // When user drags the map, stop following live marker
         map.on('dragstart', () => { isFollowingLive = false; });
     }
     db.ref('.info/connected').on('value', snap => {
@@ -191,99 +259,51 @@ function listenLive() {
         const lat = parseFloat(d.lat || 0), lng = parseFloat(d.lng || 0);
         const relayOn = (d.relay_state === true || d.relay_state === 'true');
         const speed = parseFloat(d.speed || 0);
-
         document.getElementById('stEngine').innerHTML = relayOn ? '<span class="green">🟢 ON</span>' : '<span class="red">🔴 OFF</span>';
         document.getElementById('stSpeed').textContent = speed.toFixed(1) + ' km/h';
         document.getElementById('stGPS').innerHTML = (lat && lng) ? '<span class="green">📍 Fixed</span>' : '<span class="yellow">⏳ Searching</span>';
         document.getElementById('stDriver').textContent = d.driver || 'None';
-
-        if (lat && lng) {
-            updateLiveMarker(lat, lng);
-        }
-
-        if (relayOn !== liveRelayState) {
-            liveRelayState = relayOn;
-            if (relayOn) setTimeout(loadSheetTrips, 2000);
-        }
+        if (lat && lng) updateLiveMarker(lat, lng);
+        if (relayOn !== liveRelayState) { liveRelayState = relayOn; if (relayOn) setTimeout(loadSheetTrips, 2000); }
     });
 }
 
-// ===== GOOGLE-STYLE BLUE DOT MARKER =====
+// ===== BLUE DOT =====
 function createBlueDotIcon() {
     return L.divIcon({
-        html: `
-            <div style="position:relative;width:22px;height:22px;">
-                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>
-                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div>
-            </div>
-        `,
-        className: '',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
+        html: `<div style="position:relative;width:22px;height:22px;">
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div></div>`,
+        className: '', iconSize: [40, 40], iconAnchor: [20, 20]
     });
 }
-
-// Add the pulse animation dynamically
-const pulseStyle = document.createElement('style');
-pulseStyle.textContent = `
-    @keyframes bluePulse {
-        0% { transform: translate(-50%,-50%) scale(0.5); opacity: 1; }
-        100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
-    }
-`;
-document.head.appendChild(pulseStyle);
-
 function updateLiveMarker(lat, lng) {
-    if (!liveMarker) {
-        liveMarker = L.marker([lat, lng], {icon: createBlueDotIcon(), zIndexOffset: 1000}).addTo(map);
-        liveMarker.bindPopup('📍 Live Vehicle Location');
-    } else {
-        liveMarker.setLatLng([lat, lng]);
-    }
-    
-    // Update accuracy circle
-    if (!liveCircle) {
-        liveCircle = L.circle([lat, lng], {
-            radius: 15,
-            color: '#4285F4',
-            fillColor: '#4285F4',
-            fillOpacity: 0.1,
-            weight: 1.5,
-            dashArray: '4,4'
-        }).addTo(map);
-    } else {
-        liveCircle.setLatLng([lat, lng]);
-    }
-    
-    // Follow live marker if not viewing a specific trip
-    if (isFollowingLive && selectedTripIndex < 0) {
-        map.panTo([lat, lng], {animate: true, duration: 0.5});
-    }
+    if (!liveMarker) { liveMarker = L.marker([lat, lng], {icon: createBlueDotIcon(), zIndexOffset: 1000}).addTo(map).bindPopup('📍 Live'); }
+    else liveMarker.setLatLng([lat, lng]);
+    if (!liveCircle) liveCircle = L.circle([lat, lng], {radius: 15, color: '#4285F4', fillColor: '#4285F4', fillOpacity: 0.1, weight: 1.5, dashArray: '4,4'}).addTo(map);
+    else liveCircle.setLatLng([lat, lng]);
+    if (isFollowingLive && selectedTripIndex < 0) map.panTo([lat, lng], {animate: true, duration: 0.5});
 }
 
 // ===== SHEET TRIPS =====
 function loadSheetTrips() {
-    fetch(SHEETS_CSV)
-        .then(r => r.text())
-        .then(csv => {
-            const rows = csv.split('\n').filter(l => l.trim());
-            if (rows.length < 2) return;
-            const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
-            const data = [];
-            for (let i = 1; i < rows.length; i++) {
-                const cols = rows[i].split(',').map(c => c.trim());
-                if (cols.length < 7) continue;
-                const obj = {};
-                headers.forEach((h, idx) => { obj[h] = cols[idx] || ''; });
-                data.push(obj);
-            }
-            trips = extractTrips(data);
-            document.getElementById('stTrips').textContent = trips.length;
-            renderTripList();
-            if (selectedTripIndex < 0) {
-                renderAllTripsOnMap();
-            }
-        }).catch(e => console.error('Sheets error:', e));
+    fetch(SHEETS_CSV).then(r => r.text()).then(csv => {
+        const rows = csv.split('\n').filter(l => l.trim());
+        if (rows.length < 2) return;
+        const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+        const data = [];
+        for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i].split(',').map(c => c.trim());
+            if (cols.length < 7) continue;
+            const obj = {};
+            headers.forEach((h, idx) => { obj[h] = cols[idx] || ''; });
+            data.push(obj);
+        }
+        trips = extractTrips(data);
+        document.getElementById('stTrips').textContent = trips.length;
+        renderTripList();
+        if (selectedTripIndex < 0) renderAllTripsOnMap();
+    }).catch(e => console.error('Sheets error:', e));
 }
 
 function extractTrips(rows) {
@@ -291,72 +311,42 @@ function extractTrips(rows) {
     let current = null;
     for (const row of rows) {
         const relay = (row.relay_state || '').toUpperCase() === 'TRUE';
-        const lat = parseFloat(row.latitude || 0);
-        const lng = parseFloat(row.longitude || 0);
+        const lat = parseFloat(row.latitude || 0), lng = parseFloat(row.longitude || 0);
         const ts = new Date(row.timestamp || Date.now());
         const driver = row.driver || 'None';
-        const speed = parseFloat(row.speed || 0);
-        const runtime = row.run_time || '0:00:00';
-
-        if (relay && !current) {
-            current = { driver, startTime: ts, endTime: ts, points: [], runtime: '0:00:00' };
-        }
+        if (relay && !current) current = { driver, startTime: ts, endTime: ts, points: [], runtime: '0:00:00' };
         if (current) {
-            if (lat && lng) current.points.push({ lat, lng, ts, speed });
+            if (lat && lng) current.points.push({ lat, lng, ts });
             current.endTime = ts;
-            current.runtime = runtime;
-            if (!relay) {
-                tripList.push(current);
-                current = null;
-            }
+            current.runtime = row.run_time || '0:00:00';
+            if (!relay) { tripList.push(current); current = null; }
         }
     }
     if (current) tripList.push(current);
     return tripList;
 }
 
-// ===== RENDER =====
 function renderTripList() {
     const el = document.getElementById('tripList');
-    if (!trips.length) {
-        el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No trips recorded yet</div>';
-        return;
-    }
+    if (!trips.length) { el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No trips yet</div>'; return; }
     let html = '';
     trips.forEach((t, i) => {
         const dist = calcTripDistance(t);
         html += `<div class="trip-item ${i === selectedTripIndex ? 'selected' : ''}" onclick="toggleTrip(${i})">
             <div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div>
-            <div class="trip-detail">📏 ${dist.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div>
-            <div class="trip-detail">🏁 End: ${t.endTime.toLocaleString()}</div>
-        </div>`;
+            <div class="trip-detail">📏 ${dist.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div></div>`;
     });
     el.innerHTML = html;
 }
 
 function toggleTrip(i) {
-    if (selectedTripIndex === i) {
-        // Already selected → deselect, show all
-        showAllTrips();
-    } else {
-        // Select this trip
-        selectedTripIndex = i;
-        isFollowingLive = false;  // Stop following live marker
-        renderTripList();
-        zoomToTrip(i);
-    }
+    if (selectedTripIndex === i) showAllTrips();
+    else { selectedTripIndex = i; isFollowingLive = false; renderTripList(); zoomToTrip(i); }
 }
 
 function showAllTrips() {
-    selectedTripIndex = -1;
-    isFollowingLive = true;  // Resume following live marker
-    renderTripList();
-    renderAllTripsOnMap();
-    // If live marker exists, pan to it
-    if (liveMarker) {
-        const ll = liveMarker.getLatLng();
-        map.setView([ll.lat, ll.lng], 14, {animate: true});
-    }
+    selectedTripIndex = -1; isFollowingLive = true; renderTripList(); renderAllTripsOnMap();
+    if (liveMarker) { const ll = liveMarker.getLatLng(); map.setView([ll.lat, ll.lng], 14, {animate: true}); }
 }
 
 function zoomToTrip(i) {
@@ -364,24 +354,11 @@ function zoomToTrip(i) {
     if (t.points.length) {
         clearTripLines();
         const latlngs = t.points.map(p => [p.lat, p.lng]);
-        const line = L.polyline(latlngs, {color:'#f6ad55', weight:4}).addTo(map);
-        pathLines.push(line);
-        
-        // Add start marker
-        const sm = L.circleMarker([t.points[0].lat, t.points[0].lng], {
-            radius: 8, fillColor: '#f6ad55', color: '#fff', weight: 2, fillOpacity: 1
-        }).addTo(map).bindPopup(`<b>${t.driver}</b><br>Start: ${t.startTime.toLocaleString()}`);
-        tripMarkers.push(sm);
-        
-        // Add end marker
-        const last = t.points[t.points.length - 1];
-        const em = L.circleMarker([last.lat, last.lng], {
-            radius: 8, fillColor: '#fc8181', color: '#fff', weight: 2, fillOpacity: 1
-        }).addTo(map).bindPopup(`<b>End</b><br>${t.endTime.toLocaleString()}<br>Runtime: ${t.runtime}`);
-        tripMarkers.push(em);
-        
-        const bounds = L.latLngBounds(latlngs);
-        map.fitBounds(bounds, {padding: [40, 40]});
+        pathLines.push(L.polyline(latlngs, {color:'#f6ad55', weight:4}).addTo(map));
+        tripMarkers.push(L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:8,fillColor:'#f6ad55',color:'#fff',weight:2,fillOpacity:1}).addTo(map));
+        const last = t.points[t.points.length-1];
+        tripMarkers.push(L.circleMarker([last.lat, last.lng], {radius:8,fillColor:'#fc8181',color:'#fff',weight:2,fillOpacity:1}).addTo(map));
+        map.fitBounds(L.latLngBounds(latlngs), {padding:[40,40]});
     }
 }
 
@@ -391,30 +368,60 @@ function renderAllTripsOnMap() {
     trips.forEach((t, i) => {
         if (t.points.length < 2) return;
         const latlngs = t.points.map(p => [p.lat, p.lng]);
-        const line = L.polyline(latlngs, {color: colors[i % colors.length], weight: 2.5, opacity: 0.7}).addTo(map);
-        pathLines.push(line);
-        const m = L.circleMarker([t.points[0].lat, t.points[0].lng], {
-            radius: 6, fillColor: colors[i % 6], color: '#fff', weight: 2, fillOpacity: 1
-        }).addTo(map).bindPopup(`<b>${t.driver}</b><br>Start: ${t.startTime.toLocaleString()}<br>Runtime: ${t.runtime}`);
-        tripMarkers.push(m);
+        pathLines.push(L.polyline(latlngs, {color:colors[i%colors.length], weight:2.5, opacity:0.7}).addTo(map));
+        tripMarkers.push(L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:6,fillColor:colors[i%6],color:'#fff',weight:2,fillOpacity:1}).addTo(map));
     });
 }
 
-function clearTripLines() {
-    pathLines.forEach(l => map.removeLayer(l)); pathLines = [];
-    tripMarkers.forEach(m => map.removeLayer(m)); tripMarkers = [];
+function clearTripLines() { pathLines.forEach(l => map.removeLayer(l)); pathLines = []; tripMarkers.forEach(m => map.removeLayer(m)); tripMarkers = []; }
+function calcTripDistance(t) { let d = 0; for (let i = 1; i < t.points.length; i++) { const r = 6371; const dLat = (t.points[i].lat-t.points[i-1].lat)*Math.PI/180; const dLng = (t.points[i].lng-t.points[i-1].lng)*Math.PI/180; const a = Math.sin(dLat/2)**2 + Math.cos(t.points[i-1].lat*Math.PI/180)*Math.cos(t.points[i].lat*Math.PI/180)*Math.sin(dLng/2)**2; d += r*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); } return d; }
+
+// ===== SHEETS TABLE =====
+function loadSheetData() {
+    fetch(SHEETS_CSV).then(r => r.text()).then(csv => {
+        const rows = csv.split('\n').filter(l => l.trim());
+        if (rows.length < 2) return;
+        const headers = rows[0].split(',').map(h => h.trim());
+        allSheetRows = [];
+        for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i].split(',').map(c => c.trim());
+            if (cols.length >= 7) allSheetRows.push(cols);
+        }
+        document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows loaded';
+        renderTable(allSheetRows);
+    }).catch(e => console.error('Sheet load error:', e));
 }
 
-function calcTripDistance(t) {
-    let d = 0;
-    for (let i = 1; i < t.points.length; i++) {
-        const r = 6371;
-        const dLat = (t.points[i].lat - t.points[i-1].lat) * Math.PI / 180;
-        const dLng = (t.points[i].lng - t.points[i-1].lng) * Math.PI / 180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(t.points[i-1].lat*Math.PI/180) * Math.cos(t.points[i].lat*Math.PI/180) * Math.sin(dLng/2)**2;
-        d += r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
-    return d;
+function renderTable(rows) {
+    const tbody = document.getElementById('tableBody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>'; return; }
+    let html = '';
+    rows.forEach(row => {
+        const relay = (row[8] || '').toUpperCase();
+        const relayClass = relay === 'TRUE' ? 'relay-true' : 'relay-false';
+        html += `<tr>
+            <td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td>
+            <td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td>
+            <td class="${relayClass}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function sortTable(col) {
+    if (sortColumn === col) sortAsc = !sortAsc; else { sortColumn = col; sortAsc = true; }
+    const sorted = [...allSheetRows].sort((a, b) => {
+        let va = a[col] || '', vb = b[col] || '';
+        const na = parseFloat(va), nb = parseFloat(vb);
+        if (!isNaN(na) && !isNaN(nb)) return sortAsc ? na - nb : nb - na;
+        return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    renderTable(sorted);
+}
+
+function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allSheetRows.filter(row => row.some(cell => (cell||'').toLowerCase().includes(q)));
+    renderTable(filtered);
 }
 </script>
 </body>
