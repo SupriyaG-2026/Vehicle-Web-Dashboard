@@ -16,14 +16,9 @@
 
     <style>
         :root {
-            --bg: #0a0e17;
-            --card: #141a2e;
-            --accent: #00d4ff;
-            --green: #48bb78;
-            --red: #fc8181;
-            --text: #e2e8f0;
-            --muted: #718096;
-            --border: rgba(0,212,255,0.15);
+            --bg: #0a0e17; --card: #141a2e; --accent: #00d4ff;
+            --green: #48bb78; --red: #fc8181; --text: #e2e8f0;
+            --muted: #718096; --border: rgba(0,212,255,0.15);
         }
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh}
@@ -41,6 +36,7 @@
         .navbar{background:var(--card);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--accent);flex-wrap:wrap;gap:10px}
         .navbar h1{color:var(--accent);font-size:20px}
         .logout-btn{background:transparent;color:var(--red);border:1px solid var(--red);padding:6px 16px;border-radius:6px;cursor:pointer}
+        .show-all-btn{background:var(--accent);color:#0a0e17;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px}
         .container{max-width:1400px;margin:20px auto;padding:0 20px}
         .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
         .stat{background:var(--card);padding:16px;border-radius:10px;border:1px solid var(--border);text-align:center}
@@ -50,12 +46,12 @@
         .row{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:20px}
         @media(max-width:900px){.row{grid-template-columns:1fr}}
         .card{background:var(--card);border-radius:12px;padding:18px;border:1px solid var(--border)}
-        .card h2{font-size:15px;color:var(--accent);margin-bottom:12px}
+        .card h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         #map{height:420px;border-radius:8px;z-index:1}
         .trip-list{max-height:420px;overflow-y:auto}
         .trip-item{background:rgba(255,255,255,.03);padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid var(--accent);cursor:pointer;transition:.2s}
         .trip-item:hover{background:rgba(255,255,255,.06)}
-        .trip-item.active{border-left-color:var(--green);background:rgba(72,187,120,.08)}
+        .trip-item.selected{border-left-color:var(--green);background:rgba(72,187,120,.12)}
         .trip-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
         .trip-driver{font-weight:700;font-size:15px}
         .trip-time{font-size:11px;color:var(--muted)}
@@ -64,8 +60,10 @@
         .live-on{background:var(--green);animation:pulse 1.5s infinite}
         .live-off{background:var(--red)}
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.6)}}
-        .leaflet-marker-icon.breathing{animation:breathe 1.8s ease-in-out infinite}
-        @keyframes breathe{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.4);opacity:.5}}
+        .map-legend{font-size:11px;color:var(--muted);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap}
+        .legend-item{display:flex;align-items:center;gap:4px}
+        .legend-dot{width:12px;height:12px;border-radius:50%}
+        .legend-dot.live{background:#4285F4;box-shadow:0 0 8px #4285F4}
     </style>
 </head>
 <body>
@@ -99,8 +97,22 @@
             <div class="stat"><h3>Trips Today</h3><div class="val yellow" id="stTrips">0</div></div>
         </div>
         <div class="row">
-            <div class="card"><h2>📍 Live Map</h2><div id="map"></div></div>
-            <div class="card"><h2>📋 Trip History</h2><div class="trip-list" id="tripList"><div style="color:var(--muted);text-align:center;padding:20px">Loading trips...</div></div></div>
+            <div class="card">
+                <h2>
+                    📍 Live Map
+                    <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto">🗺️ Show All Trips</button>
+                </h2>
+                <div id="map"></div>
+                <div class="map-legend">
+                    <div class="legend-item"><div class="legend-dot live"></div> Live Location</div>
+                    <div class="legend-item"><div style="width:12px;height:3px;background:#f6ad55;border-radius:2px"></div> Selected Trip</div>
+                    <div class="legend-item"><div style="width:12px;height:3px;background:var(--green);border-radius:2px"></div> Other Trips</div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>📋 Trip History <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto;font-size:11px">🗺️ Show All</button></h2>
+                <div class="trip-list" id="tripList"><div style="color:var(--muted);text-align:center;padding:20px">Loading trips...</div></div>
+            </div>
         </div>
     </div>
 </div>
@@ -125,8 +137,9 @@ const db = firebase.database();
 // ===== STATE =====
 let map, liveMarker, liveCircle, pathLines = [], tripMarkers = [];
 let trips = [];
-let currentTripIndex = -1;
+let selectedTripIndex = -1;    // -1 = show all, >=0 = zoomed to one trip
 let liveRelayState = false;
+let isFollowingLive = true;    // true = map follows live marker
 
 // ===== AUTH =====
 auth.onAuthStateChanged(user => {
@@ -157,6 +170,9 @@ function initDashboard() {
     if (!map) {
         map = L.map('map').setView([12.9716, 77.5946], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
+        
+        // When user drags the map, stop following live marker
+        map.on('dragstart', () => { isFollowingLive = false; });
     }
     db.ref('.info/connected').on('value', snap => {
         const on = snap.val();
@@ -182,29 +198,67 @@ function listenLive() {
         document.getElementById('stDriver').textContent = d.driver || 'None';
 
         if (lat && lng) {
-            if (!liveMarker) {
-                const icon = L.divIcon({
-                    html: '<div style="width:18px;height:18px;background:#00d4ff;border-radius:50%;border:3px solid #fff;box-shadow:0 0 15px #00d4ff;animation:breathe 1.8s ease-in-out infinite"></div>',
-                    className: 'breathing',
-                    iconSize: [18, 18],
-                    iconAnchor: [9, 9]
-                });
-                liveMarker = L.marker([lat, lng], {icon}).addTo(map);
-            } else {
-                liveMarker.setLatLng([lat, lng]);
-            }
-            if (!liveCircle) liveCircle = L.circle([lat, lng], {radius: 30, color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.12, weight: 2}).addTo(map);
-            else liveCircle.setLatLng([lat, lng]);
-            map.panTo([lat, lng]);
+            updateLiveMarker(lat, lng);
         }
 
         if (relayOn !== liveRelayState) {
             liveRelayState = relayOn;
-            if (relayOn) {
-                loadSheetTrips();
-            }
+            if (relayOn) setTimeout(loadSheetTrips, 2000);
         }
     });
+}
+
+// ===== GOOGLE-STYLE BLUE DOT MARKER =====
+function createBlueDotIcon() {
+    return L.divIcon({
+        html: `
+            <div style="position:relative;width:22px;height:22px;">
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div>
+            </div>
+        `,
+        className: '',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+}
+
+// Add the pulse animation dynamically
+const pulseStyle = document.createElement('style');
+pulseStyle.textContent = `
+    @keyframes bluePulse {
+        0% { transform: translate(-50%,-50%) scale(0.5); opacity: 1; }
+        100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+    }
+`;
+document.head.appendChild(pulseStyle);
+
+function updateLiveMarker(lat, lng) {
+    if (!liveMarker) {
+        liveMarker = L.marker([lat, lng], {icon: createBlueDotIcon(), zIndexOffset: 1000}).addTo(map);
+        liveMarker.bindPopup('📍 Live Vehicle Location');
+    } else {
+        liveMarker.setLatLng([lat, lng]);
+    }
+    
+    // Update accuracy circle
+    if (!liveCircle) {
+        liveCircle = L.circle([lat, lng], {
+            radius: 15,
+            color: '#4285F4',
+            fillColor: '#4285F4',
+            fillOpacity: 0.1,
+            weight: 1.5,
+            dashArray: '4,4'
+        }).addTo(map);
+    } else {
+        liveCircle.setLatLng([lat, lng]);
+    }
+    
+    // Follow live marker if not viewing a specific trip
+    if (isFollowingLive && selectedTripIndex < 0) {
+        map.panTo([lat, lng], {animate: true, duration: 0.5});
+    }
 }
 
 // ===== SHEET TRIPS =====
@@ -226,7 +280,9 @@ function loadSheetTrips() {
             trips = extractTrips(data);
             document.getElementById('stTrips').textContent = trips.length;
             renderTripList();
-            renderAllTripsOnMap();
+            if (selectedTripIndex < 0) {
+                renderAllTripsOnMap();
+            }
         }).catch(e => console.error('Sheets error:', e));
 }
 
@@ -243,7 +299,7 @@ function extractTrips(rows) {
         const runtime = row.run_time || '0:00:00';
 
         if (relay && !current) {
-            current = { driver, startTime: ts, endTime: ts, points: [], runtime: '0:00:00', startRuntime: runtime };
+            current = { driver, startTime: ts, endTime: ts, points: [], runtime: '0:00:00' };
         }
         if (current) {
             if (lat && lng) current.points.push({ lat, lng, ts, speed });
@@ -259,13 +315,17 @@ function extractTrips(rows) {
     return tripList;
 }
 
+// ===== RENDER =====
 function renderTripList() {
     const el = document.getElementById('tripList');
-    if (!trips.length) { el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No trips recorded yet</div>'; return; }
+    if (!trips.length) {
+        el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No trips recorded yet</div>';
+        return;
+    }
     let html = '';
     trips.forEach((t, i) => {
         const dist = calcTripDistance(t);
-        html += `<div class="trip-item ${i === currentTripIndex ? 'active' : ''}" onclick="focusTrip(${i})">
+        html += `<div class="trip-item ${i === selectedTripIndex ? 'selected' : ''}" onclick="toggleTrip(${i})">
             <div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div>
             <div class="trip-detail">📏 ${dist.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div>
             <div class="trip-detail">🏁 End: ${t.endTime.toLocaleString()}</div>
@@ -274,30 +334,68 @@ function renderTripList() {
     el.innerHTML = html;
 }
 
-function focusTrip(i) {
-    currentTripIndex = i;
+function toggleTrip(i) {
+    if (selectedTripIndex === i) {
+        // Already selected → deselect, show all
+        showAllTrips();
+    } else {
+        // Select this trip
+        selectedTripIndex = i;
+        isFollowingLive = false;  // Stop following live marker
+        renderTripList();
+        zoomToTrip(i);
+    }
+}
+
+function showAllTrips() {
+    selectedTripIndex = -1;
+    isFollowingLive = true;  // Resume following live marker
     renderTripList();
+    renderAllTripsOnMap();
+    // If live marker exists, pan to it
+    if (liveMarker) {
+        const ll = liveMarker.getLatLng();
+        map.setView([ll.lat, ll.lng], 14, {animate: true});
+    }
+}
+
+function zoomToTrip(i) {
     const t = trips[i];
     if (t.points.length) {
         clearTripLines();
         const latlngs = t.points.map(p => [p.lat, p.lng]);
         const line = L.polyline(latlngs, {color:'#f6ad55', weight:4}).addTo(map);
         pathLines.push(line);
+        
+        // Add start marker
+        const sm = L.circleMarker([t.points[0].lat, t.points[0].lng], {
+            radius: 8, fillColor: '#f6ad55', color: '#fff', weight: 2, fillOpacity: 1
+        }).addTo(map).bindPopup(`<b>${t.driver}</b><br>Start: ${t.startTime.toLocaleString()}`);
+        tripMarkers.push(sm);
+        
+        // Add end marker
+        const last = t.points[t.points.length - 1];
+        const em = L.circleMarker([last.lat, last.lng], {
+            radius: 8, fillColor: '#fc8181', color: '#fff', weight: 2, fillOpacity: 1
+        }).addTo(map).bindPopup(`<b>End</b><br>${t.endTime.toLocaleString()}<br>Runtime: ${t.runtime}`);
+        tripMarkers.push(em);
+        
         const bounds = L.latLngBounds(latlngs);
-        map.fitBounds(bounds, {padding:[40,40]});
+        map.fitBounds(bounds, {padding: [40, 40]});
     }
 }
 
 function renderAllTripsOnMap() {
     clearTripLines();
-    const colors = ['#48bb78','#63b3ed','#f6ad55','#fc8181','#9f7aea','#00d4ff'];
+    const colors = ['#48bb78','#63b3ed','#9f7aea','#00d4ff','#f6ad55','#fc8181'];
     trips.forEach((t, i) => {
         if (t.points.length < 2) return;
         const latlngs = t.points.map(p => [p.lat, p.lng]);
         const line = L.polyline(latlngs, {color: colors[i % colors.length], weight: 2.5, opacity: 0.7}).addTo(map);
         pathLines.push(line);
-        const m = L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:6,fillColor:colors[i%6],color:'#fff',weight:2,fillOpacity:1})
-            .addTo(map).bindPopup(`<b>${t.driver}</b><br>Start: ${t.startTime.toLocaleString()}<br>Runtime: ${t.runtime}`);
+        const m = L.circleMarker([t.points[0].lat, t.points[0].lng], {
+            radius: 6, fillColor: colors[i % 6], color: '#fff', weight: 2, fillOpacity: 1
+        }).addTo(map).bindPopup(`<b>${t.driver}</b><br>Start: ${t.startTime.toLocaleString()}<br>Runtime: ${t.runtime}`);
         tripMarkers.push(m);
     });
 }
