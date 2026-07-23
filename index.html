@@ -3,29 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Dashboard - Combined Path Tracker</title>
+    <title>Vehicle Dashboard - Authenticated</title>
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
-    <!-- Leaflet for Maps -->
+    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0a0e17; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+        body { background: #0a0e17; color: #fff; min-height: 100vh; }
         
         #loginScreen {
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            flex-grow: 1;
-            padding: 20px;
             min-height: 100vh;
+            padding: 20px;
         }
         
         .login-card {
@@ -54,7 +52,7 @@
             font-size: 16px;
             outline: none;
         }
-        .input-group input:focus { border-color: #00d4ff; box-shadow: 0 0 10px rgba(0, 212, 255, 0.2); }
+        .input-group input:focus { border-color: #00d4ff; }
         
         .login-btn {
             width: 100%;
@@ -66,13 +64,13 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
-        .login-btn:hover { background: #00b2d6; transform: translateY(-1px); }
+        .login-btn:hover { background: #00b2d6; }
+        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
         #errorMessage { color: #fc8181; font-size: 14px; margin-top: 15px; display: none; }
 
-        #mainApp { display: none; width: 100%; }
+        #mainApp { display: none; }
         
         .navbar {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
@@ -86,9 +84,6 @@
         }
         
         .navbar h1 { color: #00d4ff; font-size: 22px; }
-        .navbar h1 span { color: #fff; }
-        .navbar .user-info { color: #a0aec0; font-size: 13px; }
-        
         .logout-btn {
             background: transparent;
             color: #fc8181;
@@ -96,8 +91,6 @@
             padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
         }
         .logout-btn:hover { background: rgba(252, 129, 129, 0.1); }
         
@@ -105,9 +98,9 @@
         
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
         
         .stat-card {
@@ -117,19 +110,17 @@
             border: 1px solid rgba(0, 212, 255, 0.1);
         }
         
-        .stat-card h3 { color: #a0aec0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-card .value { font-size: 28px; font-weight: bold; margin-top: 5px; }
-        .stat-card .value.green { color: #48bb78; }
-        .stat-card .value.red { color: #fc8181; }
-        .stat-card .value.blue { color: #63b3ed; }
-        .stat-card .value.yellow { color: #f6ad55; }
-        .stat-card .value.purple { color: #9f7aea; }
+        .stat-card h3 { color: #a0aec0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .value { font-size: 26px; font-weight: bold; margin-top: 5px; }
+        .green { color: #48bb78; }
+        .red { color: #fc8181; }
+        .blue { color: #63b3ed; }
+        .yellow { color: #f6ad55; }
         
         .row {
             display: grid;
             grid-template-columns: 1.5fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
+            gap: 20px;
         }
         
         .card {
@@ -139,44 +130,12 @@
             border: 1px solid rgba(0, 212, 255, 0.1);
         }
         
-        .card h2 {
-            font-size: 16px;
-            color: #00d4ff;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .card h2 { font-size: 16px; color: #00d4ff; margin-bottom: 15px; }
         
-        .card h2 .badge {
-            font-size: 11px;
-            padding: 2px 12px;
-            border-radius: 12px;
-            background: rgba(0, 212, 255, 0.15);
-            color: #00d4ff;
-        }
-        
-        #map { height: 450px; border-radius: 8px; }
-        
-        .path-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .path-info .info-item {
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 6px;
-        }
-        
-        .path-info .info-item label { color: #a0aec0; font-size: 11px; display: block; }
-        .path-info .info-item span { font-size: 16px; font-weight: bold; color: #e2e8f0; }
+        #map { height: 400px; border-radius: 8px; }
         
         #liveData p {
-            padding: 4px 0;
+            padding: 6px 0;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             display: flex;
             justify-content: space-between;
@@ -185,64 +144,18 @@
         #liveData strong { color: #a0aec0; }
         #liveData span { color: #e2e8f0; }
         
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            padding: 15px 25px;
-            border-radius: 10px;
-            background: #1a1a2e;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            color: #fff;
-            display: none;
-            z-index: 999;
-            max-width: 400px;
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
         }
-        .toast.show { display: block; animation: slideIn 0.3s ease; }
-        .toast.success { border-color: #48bb78; }
-        .toast.error { border-color: #fc8181; }
-        .toast.info { border-color: #63b3ed; }
-        
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .clear-btn {
-            background: rgba(252, 129, 129, 0.2);
-            color: #fc8181;
-            border: 1px solid rgba(252, 129, 129, 0.2);
-            padding: 4px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.3s;
-        }
-        .clear-btn:hover { background: rgba(252, 129, 129, 0.4); }
-        
-        .refresh-btn {
-            background: rgba(99, 179, 237, 0.2);
-            color: #63b3ed;
-            border: 1px solid rgba(99, 179, 237, 0.2);
-            padding: 4px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.3s;
-        }
-        .refresh-btn:hover { background: rgba(99, 179, 237, 0.4); }
-        
-        .location-info {
-            font-size: 12px;
-            color: #a0aec0;
-            margin-top: 8px;
-            text-align: center;
-        }
+        .status-connected { background: #48bb78; }
+        .status-disconnected { background: #fc8181; }
         
         @media (max-width: 900px) {
             .row { grid-template-columns: 1fr; }
-            .navbar { flex-direction: column; align-items: stretch; }
-            .path-info { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -252,75 +165,65 @@
 <div id="loginScreen">
     <div class="login-card">
         <h2>🚗 Vehicle Tracker</h2>
-        <p>Sign in to view live and historical path data</p>
+        <p>Sign in to view live data</p>
         
         <div class="input-group">
-            <label for="emailInput">Email Address</label>
-            <input type="email" id="emailInput" placeholder="admin@example.com" autocomplete="email">
+            <label>Email</label>
+            <input type="email" id="emailInput" placeholder="supriyakaddi26@gmail.com" value="supriyakaddi26@gmail.com">
         </div>
 
         <div class="input-group">
-            <label for="passwordInput">Password</label>
-            <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
+            <label>Password</label>
+            <input type="password" id="passwordInput" placeholder="••••••••" value="Supriya@2026">
         </div>
         
-        <button class="login-btn" id="loginBtn" onclick="handleLogin()">🔐 Unlock Dashboard</button>
+        <button class="login-btn" id="loginBtn" onclick="handleLogin()">🔐 Sign In</button>
         <div id="errorMessage"></div>
+        <div id="loginStatus" style="margin-top:10px;font-size:12px;color:#a0aec0;"></div>
     </div>
 </div>
 
 <!-- Main Dashboard -->
 <div id="mainApp">
     <nav class="navbar">
-        <h1>🚗 Path <span>Tracker</span></h1>
-        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-            <span class="user-info" id="userEmail">Loading...</span>
-            <button class="logout-btn" onclick="handleLogout()">🚪 Lock</button>
+        <h1>🚗 Vehicle Monitor</h1>
+        <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+            <span style="font-size:13px;color:#a0aec0;" id="userEmail">--</span>
+            <span>
+                <span class="status-dot status-disconnected" id="dbStatusDot"></span>
+                <span style="font-size:12px;color:#a0aec0;" id="dbStatusText">DB: --</span>
+            </span>
+            <button class="logout-btn" onclick="handleLogout()">🚪 Logout</button>
         </div>
     </nav>
 
     <div class="container">
-        <div id="toast" class="toast"></div>
-
         <!-- Stats -->
         <div class="stats">
-            <div class="stat-card"><h3>Relay Status</h3><div class="value" id="relayStatus">--</div></div>
-            <div class="stat-card"><h3>Path Points</h3><div class="value purple" id="pathCount">0</div></div>
-            <div class="stat-card"><h3>Distance (km)</h3><div class="value blue" id="distanceValue">0.00</div></div>
-            <div class="stat-card"><h3>GPS Status</h3><div class="value" id="gpsStatus">--</div></div>
+            <div class="stat-card"><h3>Engine</h3><div class="value" id="relayStatus">--</div></div>
+            <div class="stat-card"><h3>Speed</h3><div class="value blue" id="speedValue">0</div></div>
+            <div class="stat-card"><h3>GPS</h3><div class="value" id="gpsStatus">--</div></div>
+            <div class="stat-card"><h3>Runtime</h3><div class="value yellow" id="runtimeValue">00:00</div></div>
+            <div class="stat-card"><h3>Driver</h3><div class="value" id="driverValue" style="font-size:18px;">--</div></div>
         </div>
 
-        <!-- Map & Info -->
+        <!-- Map & Live Data -->
         <div class="row">
             <div class="card">
-                <h2>
-                    📍 Combined Path
-                    <span class="badge" id="pathStatus">⏹️ Stopped</span>
-                    <button class="refresh-btn" onclick="loadAllData()" style="margin-left: auto;">🔄 Refresh All</button>
-                </h2>
+                <h2>📍 Live Location</h2>
                 <div id="map"></div>
-                <div class="location-info" id="locationInfo">📍 Bangalore, Karnataka, India</div>
-                <div class="path-info">
-                    <div class="info-item"><label>Start Time</label><span id="startTime">--</span></div>
-                    <div class="info-item"><label>End Time</label><span id="endTime">--</span></div>
-                    <div class="info-item"><label>Points Collected</label><span id="pointCount">0</span></div>
-                    <div class="info-item"><label>Total Distance</label><span id="totalDistance">0.00 km</span></div>
-                </div>
             </div>
             <div class="card">
-                <h2>📡 Live Sensor Data</h2>
+                <h2>📡 Sensor Data</h2>
                 <div id="liveData">
                     <p><strong>Accel X:</strong> <span id="liveX">--</span></p>
                     <p><strong>Accel Y:</strong> <span id="liveY">--</span></p>
                     <p><strong>Accel Z:</strong> <span id="liveZ">--</span></p>
                     <p><strong>Latitude:</strong> <span id="liveLat">--</span></p>
                     <p><strong>Longitude:</strong> <span id="liveLng">--</span></p>
-                    <p><strong>Relay:</strong> <span id="liveRelay">--</span></p>
+                    <p><strong>Speed:</strong> <span id="liveSpeed">--</span> km/h</p>
+                    <p><strong>Geofence:</strong> <span id="liveGeofence">--</span></p>
                     <p><strong>Last Update:</strong> <span id="liveTime">--</span></p>
-                </div>
-                <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="clear-btn" onclick="clearPath()">🗑️ Clear Current Path</button>
-                    <button class="refresh-btn" onclick="zoomToBangalore()">📍 Zoom to Bangalore</button>
                 </div>
             </div>
         </div>
@@ -329,13 +232,8 @@
 
 <script>
 // ============================================
-// CONFIGURATION
+// FIREBASE CONFIG
 // ============================================
-
-// Paste your deployed Google Apps Script Web App URL here to bypass the 5-minute CSV delay!
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNStk3ClNavNH71M8KJmg0r7J9x3nXBjgfM11x8GkmTcmpfB030SQPTYeXVCxvfrKq7A/exec/"; 
-const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBeHFigSw8HUlD9PmSIFC3qAVAI6L3HDKRs_hkQR9jZ6RQzWXxqazn_cb5VqhxC32s2yYGQZx3DLZw/pub?gid=0&single=true&output=csv";
-
 const firebaseConfig = {
     apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
     authDomain: "vehicle-web-dashboard.firebaseapp.com",
@@ -345,578 +243,330 @@ const firebaseConfig = {
     messagingSenderId: "890756908626",
     appId: "1:890756908626:web:8a1f205b40fe265134c18b"
 };
-    
+
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
 const auth = firebase.auth();
+const db = firebase.database();
 
 // ============================================
-// STATE
+// GLOBAL STATE
 // ============================================
 let map, marker, sensorListener;
 let mapInitialized = false;
-let allPathPoints = [];
-let livePathPoints = [];
-let isPathActive = false;
-let pathStartTime = null;
-let pathEndTime = null;
-let totalDistance = 0;
-let lastLat = null;
-let lastLng = null;
-let pathLine = null;
-let markers = [];
-let relayState = false;
-let sheetsLoaded = false;
-
-// Coordinates centered precisely around Bangalore, India
-const INDIA_CENTER = [20.5937, 78.9629];
-const BANGALORE_CENTER = [12.9726, 77.6523];
-const DEFAULT_ZOOM = 5;
-const BANGALORE_ZOOM = 16;
+const BANGALORE_CENTER = [12.9716, 77.5946];
 
 // ============================================
-// AUTHENTICATION
+// AUTH STATE LISTENER
 // ============================================
-
-auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
-
 auth.onAuthStateChanged((user) => {
+    console.log("[AUTH] State changed. User:", user ? user.email : "null");
+    
     if (user) {
-        const userEmailEl = document.getElementById('userEmail');
-        if (userEmailEl) userEmailEl.textContent = user.email || 'Admin';
-        
+        // User is signed in
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('userEmail').textContent = user.email;
+        
+        // Initialize dashboard only after auth is confirmed
         initDashboard();
-        setTimeout(loadAllData, 1000);
+        
+        // Start listening to sensor data
+        startSensorListener();
+        
+        // Listen to database connection status
+        listenToDBConnection();
+        
+        console.log("[AUTH] Dashboard initialized for:", user.email);
     } else {
+        // User is signed out
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
-        stopListeners();
-        resetAllPaths();
+        document.getElementById('loginStatus').textContent = '';
+        
+        // Stop sensor listener
+        stopSensorListener();
+        
+        console.log("[AUTH] User signed out, dashboard hidden");
     }
 });
 
+// ============================================
+// LOGIN / LOGOUT
+// ============================================
 function handleLogin() {
     const email = document.getElementById('emailInput').value.trim();
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
     const loginBtn = document.getElementById('loginBtn');
+    const statusDiv = document.getElementById('loginStatus');
     
     if (!email || !password) {
-        errorDiv.textContent = "⚠️ Please fill in all fields.";
+        errorDiv.textContent = "⚠️ Please fill in all fields";
         errorDiv.style.display = 'block';
         return;
     }
 
     loginBtn.disabled = true;
-    loginBtn.textContent = "Verifying...";
+    loginBtn.textContent = "Signing in...";
+    statusDiv.textContent = "Connecting to Firebase...";
+    errorDiv.style.display = 'none';
 
     auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-            loginBtn.disabled = false;
-            loginBtn.textContent = "🔐 Unlock Dashboard";
-            document.getElementById('passwordInput').value = '';
-            errorDiv.style.display = 'none';
+        .then((userCredential) => {
+            console.log("[AUTH] Login successful:", userCredential.user.email);
+            statusDiv.textContent = "✅ Login successful! Loading dashboard...";
         })
         .catch((error) => {
+            console.error("[AUTH] Login error:", error.code, error.message);
             loginBtn.disabled = false;
-            loginBtn.textContent = "🔐 Unlock Dashboard";
-            errorDiv.textContent = "⚠️ " + error.message;
+            loginBtn.textContent = "🔐 Sign In";
+            statusDiv.textContent = '';
+            
+            // User-friendly error messages
+            let friendlyMsg = error.message;
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                friendlyMsg = "❌ Invalid email or password. Please try again.";
+            } else if (error.code === 'auth/too-many-requests') {
+                friendlyMsg = "⚠️ Too many attempts. Please wait and try again.";
+            } else if (error.code === 'auth/network-request-failed') {
+                friendlyMsg = "🌐 Network error. Check your internet connection.";
+            }
+            
+            errorDiv.textContent = friendlyMsg;
             errorDiv.style.display = 'block';
         });
 }
 
-document.getElementById('passwordInput').addEventListener('keypress', function(e) { 
-    if (e.key === 'Enter') handleLogin(); 
-});
-
 function handleLogout() {
-    auth.signOut().catch(err => console.error("Signout error:", err));
+    console.log("[AUTH] Logging out...");
+    stopSensorListener();
+    auth.signOut();
 }
 
-function stopListeners() {
+// Allow Enter key to submit login
+document.getElementById('passwordInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') handleLogin();
+});
+
+// ============================================
+// DASHBOARD INIT
+// ============================================
+function initDashboard() {
+    if (!mapInitialized) {
+        const mapEl = document.getElementById('map');
+        if (!mapEl) {
+            console.error("[MAP] Map element not found!");
+            return;
+        }
+        
+        map = L.map('map').setView(BANGALORE_CENTER, 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        
+        marker = L.marker(BANGALORE_CENTER).addTo(map);
+        marker.bindPopup('Waiting for GPS...');
+        
+        mapInitialized = true;
+        console.log("[MAP] Map initialized");
+    } else {
+        // Refresh map size after display change
+        setTimeout(() => map.invalidateSize(), 200);
+    }
+}
+
+// ============================================
+// DATABASE CONNECTION LISTENER
+// ============================================
+function listenToDBConnection() {
+    const connectedRef = db.ref('.info/connected');
+    connectedRef.on('value', (snap) => {
+        const connected = snap.val();
+        const dot = document.getElementById('dbStatusDot');
+        const text = document.getElementById('dbStatusText');
+        
+        if (connected === true) {
+            dot.className = 'status-dot status-connected';
+            text.textContent = 'DB: Connected';
+            console.log("[DB] Connected to Firebase Realtime Database");
+        } else {
+            dot.className = 'status-dot status-disconnected';
+            text.textContent = 'DB: Disconnected';
+            console.log("[DB] Disconnected from Firebase Realtime Database");
+        }
+    });
+}
+
+// ============================================
+// SENSOR DATA LISTENER
+// ============================================
+function startSensorListener() {
+    // Stop any existing listener first
+    stopSensorListener();
+    
+    console.log("[DB] Starting sensor data listener...");
+    
+    const sensorRef = db.ref('device_profile/sensor_data');
+    
+    sensorListener = sensorRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        
+        if (!data) {
+            console.log("[DB] No sensor data found at device_profile/sensor_data");
+            return;
+        }
+        
+        console.log("[DB] Sensor data received:", JSON.stringify(data).substring(0, 100));
+        
+        // Update UI
+        updateSensorUI(data);
+        updateMap(data);
+        updateGeofenceInfo();
+    }, (error) => {
+        console.error("[DB] Error reading sensor data:", error.message);
+        document.getElementById('dbStatusDot').className = 'status-dot status-disconnected';
+        document.getElementById('dbStatusText').textContent = 'DB: Error - ' + error.message;
+    });
+    
+    // Also listen to geofence
+    db.ref('device_profile/geofence').on('value', (snapshot) => {
+        const geoData = snapshot.val();
+        if (geoData) {
+            updateGeofenceUI(geoData);
+        }
+    });
+    
+    // Also listen to fingerprints
+    db.ref('device_profile/fingerprints').on('value', (snapshot) => {
+        const fpData = snapshot.val();
+        if (fpData) {
+            console.log("[DB] Fingerprints loaded:", Object.keys(fpData).length);
+        }
+    });
+}
+
+function stopSensorListener() {
     if (sensorListener) {
         try {
-            const ref = database.ref('sensor_data');
-            ref.off('value', sensorListener);
-        } catch(e) {}
+            db.ref('device_profile/sensor_data').off('value', sensorListener);
+            console.log("[DB] Sensor listener stopped");
+        } catch(e) {
+            console.error("[DB] Error stopping listener:", e);
+        }
         sensorListener = null;
     }
 }
 
 // ============================================
-// MAP FUNCTIONS
+// UPDATE UI
 // ============================================
-
-function zoomToIndia() {
-    if (map) {
-        map.setView(INDIA_CENTER, DEFAULT_ZOOM);
-        showToast('🇮🇳 Zoomed to India', 'info');
+function updateSensorUI(data) {
+    // Relay / Engine
+    const relayEl = document.getElementById('relayStatus');
+    if (relayEl) {
+        const isOn = (data.relay_state === true || data.relay_state === 'true');
+        relayEl.textContent = isOn ? '🟢 ON' : '🔴 OFF';
+        relayEl.className = 'value ' + (isOn ? 'green' : 'red');
     }
-}
-
-function zoomToBangalore() {
-    if (map) {
-        map.setView(BANGALORE_CENTER, BANGALORE_ZOOM);
-        showToast('📍 Zoomed to Bangalore', 'info');
-    }
-}
-
-function getLocationName(lat, lng) {
-    if (lat >= 8 && lat <= 37 && lng >= 68 && lng <= 97) {
-        if (lat >= 12.8 && lat <= 13.2 && lng >= 77.4 && lng <= 77.8) {
-            return '📍 Bangalore, Karnataka, India';
-        }
-        return '📍 India';
-    }
-    return '📍 Location Unknown';
-}
-
-// ============================================
-// LOAD ALL DATA
-// ============================================
-
-function loadAllData() {
-    showToast('🔄 Syncing live streams from system...', 'info');
-    resetAllPaths();
-    fetchSheetsData();
-    listenToSensorData();
-}
-
-function resetAllPaths() {
-    allPathPoints = [];
-    livePathPoints = [];
-    isPathActive = false;
-    totalDistance = 0;
-    lastLat = null;
-    lastLng = null;
-    pathStartTime = null;
-    pathEndTime = null;
     
-    if (pathLine && map) {
-        map.removeLayer(pathLine);
-        pathLine = null;
+    // Speed
+    const speedEl = document.getElementById('speedValue');
+    if (speedEl) {
+        const speed = parseFloat(data.speed || 0);
+        speedEl.textContent = speed.toFixed(1) + ' km/h';
     }
-    markers.forEach(m => {
-        if (map && m) map.removeLayer(m);
-    });
-    markers = [];
     
-    const pathStatus = document.getElementById('pathStatus');
-    if (pathStatus) {
-        pathStatus.textContent = '⏹️ Stopped';
-        pathStatus.style.color = '#fc8181';
+    // GPS Status
+    const gpsEl = document.getElementById('gpsStatus');
+    if (gpsEl) {
+        const hasGPS = (data.lat && data.lat !== 0 && data.lng && data.lng !== 0);
+        gpsEl.textContent = hasGPS ? '📍 Fixed' : '⏳ Searching';
+        gpsEl.className = 'value ' + (hasGPS ? 'green' : 'yellow');
     }
-    updatePathUI();
-}
-
-// ============================================
-// FETCH SHEETS DATA (LIVE API BYPASS ROUTE)
-// ============================================
-
-function fetchSheetsData() {
-    const url = "https://script.google.com/macros/s/AKfycbzNStk3ClNavNH71M8KJmg0r7J9x3nXBjgfM11x8GkmTcmpfB030SQPTYeXVCxvfrKq7A/exec?action=sensor";
-
-    fetch(url, {
-        method: "GET",
-        mode: "cors", // Explicitly enable CORS cross-origin requests
-        redirect: "follow" // CRITICAL: Tells the browser to transparently follow the 302 redirect
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log("✅ Sheet data synced successfully:", data);
-        // Process and display your sensor metrics here...
-    })
-    .catch(error => {
-        console.error("❌ Failed fetching sheet data:", error);
-    });
-}
-
-function fallbackToCSV() {
-    showToast('📊 Fetching data log sequence...', 'info');
-    fetch(SHEETS_CSV_URL)
-        .then(response => response.text())
-        .then(csvText => {
-            const points = parseCSVToPoints(csvText);
-            if (points && points.length > 0) {
-                allPathPoints = points;
-                sheetsLoaded = true;
-                updatePathUI();
-                renderCombinedPath();
-                showToast(`✅ Synced log indexes successfully`, 'success');
-                
-                const lastPoint = points[points.length - 1];
-                if (map && lastPoint.lat && lastPoint.lng) {
-                    map.setView([lastPoint.lat, lastPoint.lng], BANGALORE_ZOOM);
-                    document.getElementById('locationInfo').textContent = getLocationName(lastPoint.lat, lastPoint.lng);
-                }
-            } else {
-                map.setView(BANGALORE_CENTER, BANGALORE_ZOOM);
-            }
-        })
-        .catch(error => {
-            showToast('❌ Failed to extract stream data', 'error');
-            map.setView(BANGALORE_CENTER, BANGALORE_ZOOM);
-        });
-}
-
-function processIncomingPoint(lat, lng, timestamp) {
-    if(!lat || !lng || lat === 0 || lng === 0) return;
-    const point = { lat, lng, timestamp, source: 'sheets' };
-    allPathPoints.push(point);
-    sheetsLoaded = true;
-    updatePathUI();
-    renderCombinedPath();
-    map.setView([lat, lng], BANGALORE_ZOOM);
-}
-
-function parseCSVToPoints(csv) {
-    const lines = csv.split('\n').filter(line => line.trim() !== '');
-    if (lines.length < 2) return [];
     
-    const points = [];
-    let totalDist = 0;
+    // Runtime
+    const runtimeEl = document.getElementById('runtimeValue');
+    if (runtimeEl) {
+        const sec = parseInt(data.runtime || 0);
+        const mins = Math.floor(sec / 60);
+        const hrs = Math.floor(mins / 60);
+        runtimeEl.textContent = `${hrs}h ${mins % 60}m`;
+    }
     
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim());
-        if (cols.length >= 6) {
-            const lat = parseFloat(cols[4]); // Maps column index correctly to Latitude
-            const lng = parseFloat(cols[5]); // Maps column index correctly to Longitude
-            const timestamp = cols[0] || new Date().toISOString();
-            
-            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-                points.push({
-                    lat: lat,
-                    lng: lng,
-                    timestamp: timestamp,
-                    source: 'sheets'
-                });
-            }
+    // Driver
+    const driverEl = document.getElementById('driverValue');
+    if (driverEl) {
+        driverEl.textContent = data.driver || 'None';
+    }
+    
+    // Live sensor values
+    setText('liveX', (data.accel_x || 0).toFixed(2));
+    setText('liveY', (data.accel_y || 0).toFixed(2));
+    setText('liveZ', (data.accel_z || 0).toFixed(2));
+    setText('liveLat', (data.lat || 0).toFixed(6));
+    setText('liveLng', (data.lng || 0).toFixed(6));
+    setText('liveSpeed', (data.speed || 0).toFixed(1));
+    setText('liveTime', new Date().toLocaleTimeString());
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+
+function updateMap(data) {
+    if (!map || !marker) return;
+    
+    const lat = parseFloat(data.lat || data.latitude || 0);
+    const lng = parseFloat(data.lng || data.longitude || 0);
+    
+    if (lat && lng && lat !== 0 && lng !== 0) {
+        marker.setLatLng([lat, lng]);
+        marker.setPopupContent(`
+            <b>Vehicle Location</b><br>
+            Lat: ${lat.toFixed(6)}<br>
+            Lng: ${lng.toFixed(6)}<br>
+            Speed: ${(data.speed || 0).toFixed(1)} km/h<br>
+            Driver: ${data.driver || 'None'}
+        `);
+        
+        // Only pan if not already focused on vehicle
+        const currentCenter = map.getCenter();
+        const dist = Math.sqrt(
+            Math.pow(currentCenter.lat - lat, 2) + 
+            Math.pow(currentCenter.lng - lng, 2)
+        );
+        if (dist > 0.01) {
+            map.panTo([lat, lng]);
         }
     }
-    
-    if (points.length > 0) {
-        for (let i = 1; i < points.length; i++) {
-            totalDist += calculateDistance(points[i-1].lat, points[i-1].lng, points[i].lat, points[i].lng);
-        }
-        totalDistance = totalDist;
-        pathStartTime = new Date(points[0].timestamp);
-        pathEndTime = new Date(points[points.length - 1].timestamp);
-    }
-    
-    return points;
 }
 
-// ============================================
-// DASHBOARD INIT
-// ============================================
-
-function initDashboard() {
-    if (!mapInitialized && document.getElementById('map')) {
-        map = L.map('map').setView(BANGALORE_CENTER, BANGALORE_ZOOM);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-        marker = L.marker(BANGALORE_CENTER).addTo(map);
-        mapInitialized = true;
-    } else if (mapInitialized && map) {
-        setTimeout(() => map.invalidateSize(), 100);
-    }
-}
-
-// ============================================
-// SENSOR DATA LISTENER (PATH ALIGNMENT FIX)
-// ============================================
-
-function listenToSensorData() {
-    stopListeners();
-    
-    // CORRECTED PATH: Points directly inside the device_profile parent node
-    const sensorRef = database.ref('device_profile/sensor_data'); 
-    
-    sensorListener = function(snapshot) {
+function updateGeofenceInfo() {
+    db.ref('device_profile/geofence').once('value').then(snapshot => {
         const data = snapshot.val();
         if (data) {
-            relayState = data.relay_state || false;
-            updateUI(data);
-            
-            const currentLat = data.lat || data.latitude;
-            const currentLng = data.lng || data.longitude;
-            
-            updateMap(currentLat, currentLng);
-            
-            if (data.relay_state === true && currentLat && currentLng) {
-                trackLivePath(currentLat, currentLng);
-            } else if (isPathActive) {
-                finalizeLivePath();
-            }
-        }
-    };
-    
-    sensorRef.on('value', sensorListener);
-}
-
-// ============================================
-// PATH TRACKING
-// ============================================
-
-function trackLivePath(lat, lng) {
-    if (!lat || !lng || lat === 0 || lng === 0) return;
-    
-    if (lastLat !== null && lastLng !== null) {
-        const dist = calculateDistance(lastLat, lastLng, lat, lng);
-        if (dist < 0.001) return;
-    }
-    
-    if (!isPathActive) {
-        isPathActive = true;
-        livePathPoints = [];
-        const pathStatus = document.getElementById('pathStatus');
-        if (pathStatus) {
-            pathStatus.textContent = '🟢 Recording';
-            pathStatus.style.color = '#48bb78';
-        }
-        showToast('🟢 Path recording started!', 'success');
-    }
-    
-    const point = {
-        lat: lat,
-        lng: lng,
-        timestamp: new Date().toISOString(),
-        source: 'live'
-    };
-    
-    livePathPoints.push(point);
-    lastLat = lat;
-    lastLng = lng;
-    
-    allPathPoints = [...allPathPoints.filter(p => p.source === 'sheets'), ...livePathPoints];
-    
-    if (allPathPoints.length > 1) {
-        let dist = 0;
-        for (let i = 1; i < allPathPoints.length; i++) {
-            dist += calculateDistance(allPathPoints[i-1].lat, allPathPoints[i-1].lng, allPathPoints[i].lat, allPathPoints[i].lng);
-        }
-        totalDistance = dist;
-    }
-    
-    updatePathUI();
-    renderCombinedPath();
-}
-
-function finalizeLivePath() {
-    if (!isPathActive) return;
-    isPathActive = false;
-    const pathStatus = document.getElementById('pathStatus');
-    if (pathStatus) {
-        pathStatus.textContent = '⏹️ Stopped';
-        pathStatus.style.color = '#fc8181';
-    }
-    showToast('⏹️ Path recording stopped', 'info');
-    lastLat = null;
-    lastLng = null;
-}
-
-function calculateDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-}
-
-// ============================================
-// RENDER PATH
-// ============================================
-
-function renderCombinedPath() {
-    if (!map) return;
-    
-    if (pathLine) {
-        map.removeLayer(pathLine);
-        pathLine = null;
-    }
-    markers.forEach(m => {
-        if (m) map.removeLayer(m);
-    });
-    markers = [];
-    
-    if (allPathPoints.length < 2) {
-        if (allPathPoints.length === 1) {
-            const p = allPathPoints[0];
-            const m = L.circleMarker([p.lat, p.lng], {
-                radius: 8,
-                fillColor: '#00d4ff',
-                color: '#00d4ff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).addTo(map).bindPopup('📍 Start Point');
-            markers.push(m);
-            map.setView([p.lat, p.lng], BANGALORE_ZOOM);
-            document.getElementById('locationInfo').textContent = getLocationName(p.lat, p.lng);
-        }
-        return;
-    }
-    
-    const latlngs = allPathPoints.map(p => [p.lat, p.lng]);
-    
-    pathLine = L.polyline(latlngs, {
-        color: '#00d4ff',
-        weight: 4,
-        opacity: 0.8,
-        lineJoin: 'round'
-    }).addTo(map);
-    
-    const first = allPathPoints[0];
-    const last = allPathPoints[allPathPoints.length - 1];
-    
-    const startMarker = L.circleMarker([first.lat, first.lng], {
-        radius: 10,
-        fillColor: '#48bb78',
-        color: '#48bb78',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.9
-    }).addTo(map).bindPopup('🏁 Start<br>' + new Date(first.timestamp).toLocaleString());
-    markers.push(startMarker);
-    
-    const endMarker = L.circleMarker([last.lat, last.lng], {
-        radius: 10,
-        fillColor: '#fc8181',
-        color: '#fc8181',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.9
-    }).addTo(map).bindPopup('🏁 End<br>' + new Date(last.timestamp).toLocaleString());
-    markers.push(endMarker);
-    
-    allPathPoints.forEach((p, i) => {
-        if (i % 10 === 0 && i > 0 && i < allPathPoints.length - 1) {
-            const color = p.source === 'sheets' ? '#9f7aea' : '#63b3ed';
-            const m = L.circleMarker([p.lat, p.lng], {
-                radius: 5,
-                fillColor: color,
-                color: color,
-                weight: 1,
-                opacity: 0.6,
-                fillOpacity: 0.6
-            }).addTo(map).bindPopup(`📍 ${p.source === 'sheets' ? 'Historical' : 'Live'} Point ${i}`);
-            markers.push(m);
+            updateGeofenceUI(data);
         }
     });
-    
-    const bounds = L.latLngBounds(latlngs);
-    map.fitBounds(bounds, { padding: [50, 50] });
-    
-    const center = bounds.getCenter();
-    document.getElementById('locationInfo').textContent = getLocationName(center.lat, center.lng);
 }
 
-// ============================================
-// UI UPDATE FUNCTIONS
-// ============================================
-
-function updateUI(data) {
-    const getEl = (id) => document.getElementById(id);
-    
-    const relayStatus = getEl('relayStatus');
-    if (relayStatus) {
-        relayStatus.textContent = data.relay_state ? '🟢 ON' : '🔴 OFF';
-        relayStatus.className = 'value ' + (data.relay_state ? 'green' : 'red');
-    }
-    
-    const currentLat = data.lat || data.latitude || 0;
-    const currentLng = data.lng || data.longitude || 0;
-    
-    const gpsStatus = getEl('gpsStatus');
-    if (gpsStatus) {
-        const gpsFixed = currentLat !== 0 && currentLng !== 0;
-        gpsStatus.textContent = gpsFixed ? '📍 Fixed' : '⏳ Searching';
-        gpsStatus.className = 'value ' + (gpsFixed ? 'green' : 'yellow');
-    }
-    
-    const liveX = getEl('liveX'); if (liveX) liveX.textContent = (data.accel_x || 0).toFixed(2);
-    const liveY = getEl('liveY'); if (liveY) liveY.textContent = (data.accel_y || 0).toFixed(2);
-    const liveZ = getEl('liveZ'); if (liveZ) liveZ.textContent = (data.accel_z || 0).toFixed(2);
-    const liveLat = getEl('liveLat'); if (liveLat) liveLat.textContent = currentLat.toFixed(6);
-    const liveLng = getEl('liveLng'); if (liveLng) liveLng.textContent = currentLng.toFixed(6);
-    const liveRelay = getEl('liveRelay'); if (liveRelay) liveRelay.textContent = data.relay_state ? 'ON' : 'OFF';
-    const liveTime = getEl('liveTime'); if (liveTime) liveTime.textContent = new Date().toLocaleString();
-}
-
-function updateMap(lat, lng) {
-    if (lat && lng && lat !== 0 && lng !== 0 && marker && map) {
-        marker.setLatLng([lat, lng]);
-        if (!isPathActive && allPathPoints.length === 0) {
-            map.setView([lat, lng], BANGALORE_ZOOM);
-            document.getElementById('locationInfo').textContent = getLocationName(lat, lng);
-        }
-    }
-}
-
-function updatePathUI() {
-    const getEl = (id) => document.getElementById(id);
-    
-    const pathCount = getEl('pathCount'); if (pathCount) pathCount.textContent = allPathPoints.length;
-    const pointCount = getEl('pointCount'); if (pointCount) pointCount.textContent = allPathPoints.length;
-    const totalDistanceEl = getEl('totalDistance'); if (totalDistanceEl) totalDistanceEl.textContent = totalDistance.toFixed(2) + ' km';
-    const distanceValue = getEl('distanceValue'); if (distanceValue) distanceValue.textContent = totalDistance.toFixed(2);
-    
-    const startTime = getEl('startTime'); if (startTime && pathStartTime) startTime.textContent = pathStartTime.toLocaleString();
-    const endTime = getEl('endTime'); if (endTime && pathEndTime) endTime.textContent = pathEndTime.toLocaleString();
-}
-
-function clearPath() {
-    if (isPathActive) {
-        if (!confirm('Path is currently recording. Stop and clear?')) return;
-        finalizeLivePath();
-    }
-    
-    if (allPathPoints.length === 0) {
-        showToast('ℹ️ No path to clear', 'info');
-        return;
-    }
-    
-    if (confirm('Clear current path from map? (Sheets data will reload)')) {
-        resetAllPaths();
-        setTimeout(fetchSheetsData, 500);
-        showToast('🗑️ Path cleared, reloading active matrix...', 'info');
+function updateGeofenceUI(data) {
+    const geoEl = document.getElementById('liveGeofence');
+    if (geoEl) {
+        geoEl.textContent = data.active ? '✅ Active' : '❌ Inactive';
+        geoEl.style.color = data.active ? '#48bb78' : '#fc8181';
     }
 }
 
 // ============================================
-// TOAST
+// INITIALIZATION
 // ============================================
-
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    toast.className = 'toast show ' + type;
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => {
-        toast.className = 'toast';
-    }, 4000);
-}
-
-// ============================================
-// CLEANUP
-// ============================================
-
-window.addEventListener('beforeunload', function() {
-    stopListeners();
-});
+console.log("[SYSTEM] Vehicle Dashboard loaded");
+console.log("[SYSTEM] Firebase SDK version:", firebase.SDK_VERSION);
+console.log("[SYSTEM] Waiting for authentication...");
 </script>
+
 </body>
 </html>
