@@ -3,237 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Dashboard - Authenticated</title>
-    
-    <!-- Firebase SDKs -->
+    <title>Vehicle Trip Monitor</title>
+
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0a0e17; color: #fff; min-height: 100vh; }
-        
-        #loginScreen {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .login-card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            text-align: center;
-        }
-        
-        .login-card h2 { color: #00d4ff; margin-bottom: 10px; }
-        .login-card p { color: #a0aec0; margin-bottom: 25px; font-size: 14px; }
-        
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; color: #a0aec0; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-        .input-group input {
-            width: 100%;
-            padding: 12px 16px;
-            background: #0f1123;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-        }
-        .input-group input:focus { border-color: #00d4ff; }
-        
-        .login-btn {
-            width: 100%;
-            padding: 12px;
-            background: #00d4ff;
-            color: #0a0e17;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .login-btn:hover { background: #00b2d6; }
-        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        #errorMessage { color: #fc8181; font-size: 14px; margin-top: 15px; display: none; }
 
-        #mainApp { display: none; }
-        
-        .navbar {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #00d4ff;
-            flex-wrap: wrap;
-            gap: 10px;
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --card: #141a2e;
+            --accent: #00d4ff;
+            --green: #48bb78;
+            --red: #fc8181;
+            --text: #e2e8f0;
+            --muted: #718096;
+            --border: rgba(0,212,255,0.15);
         }
-        
-        .navbar h1 { color: #00d4ff; font-size: 22px; }
-        .logout-btn {
-            background: transparent;
-            color: #fc8181;
-            border: 1px solid #fc8181;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .logout-btn:hover { background: rgba(252, 129, 129, 0.1); }
-        
-        .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 212, 255, 0.1);
-        }
-        
-        .stat-card h3 { color: #a0aec0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-card .value { font-size: 26px; font-weight: bold; margin-top: 5px; }
-        .green { color: #48bb78; }
-        .red { color: #fc8181; }
-        .blue { color: #63b3ed; }
-        .yellow { color: #f6ad55; }
-        
-        .row {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 20px;
-        }
-        
-        .card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.1);
-        }
-        
-        .card h2 { font-size: 16px; color: #00d4ff; margin-bottom: 15px; }
-        
-        #map { height: 400px; border-radius: 8px; }
-        
-        #liveData p {
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        #liveData strong { color: #a0aec0; }
-        #liveData span { color: #e2e8f0; }
-        
-        .status-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        .status-connected { background: #48bb78; }
-        .status-disconnected { background: #fc8181; }
-        
-        @media (max-width: 900px) {
-            .row { grid-template-columns: 1fr; }
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh}
+        #loginScreen{display:flex;justify-content:center;align-items:center;min-height:100vh}
+        .login-card{background:var(--card);padding:40px;border-radius:16px;border:1px solid var(--border);width:100%;max-width:400px;text-align:center}
+        .login-card h2{color:var(--accent);margin-bottom:10px}
+        .login-card p{color:var(--muted);font-size:14px;margin-bottom:20px}
+        .input-group{margin-bottom:16px;text-align:left}
+        .input-group label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px}
+        .input-group input{width:100%;padding:12px;background:#0f1123;border:1px solid var(--border);border-radius:8px;color:#fff;font-size:15px}
+        .btn{width:100%;padding:12px;background:var(--accent);color:#0a0e17;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:15px}
+        .btn:hover{opacity:.9}
+        #errorMsg{color:var(--red);font-size:13px;margin-top:12px;display:none}
+        #mainApp{display:none}
+        .navbar{background:var(--card);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--accent);flex-wrap:wrap;gap:10px}
+        .navbar h1{color:var(--accent);font-size:20px}
+        .logout-btn{background:transparent;color:var(--red);border:1px solid var(--red);padding:6px 16px;border-radius:6px;cursor:pointer}
+        .container{max-width:1400px;margin:20px auto;padding:0 20px}
+        .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+        .stat{background:var(--card);padding:16px;border-radius:10px;border:1px solid var(--border);text-align:center}
+        .stat h3{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:2px}
+        .stat .val{font-size:24px;font-weight:700;margin-top:4px}
+        .green{color:var(--green)}.red{color:var(--red)}.blue{color:var(--accent)}.yellow{color:#f6ad55}
+        .row{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:20px}
+        @media(max-width:900px){.row{grid-template-columns:1fr}}
+        .card{background:var(--card);border-radius:12px;padding:18px;border:1px solid var(--border)}
+        .card h2{font-size:15px;color:var(--accent);margin-bottom:12px}
+        #map{height:420px;border-radius:8px;z-index:1}
+        .trip-list{max-height:420px;overflow-y:auto}
+        .trip-item{background:rgba(255,255,255,.03);padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid var(--accent);cursor:pointer;transition:.2s}
+        .trip-item:hover{background:rgba(255,255,255,.06)}
+        .trip-item.active{border-left-color:var(--green);background:rgba(72,187,120,.08)}
+        .trip-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+        .trip-driver{font-weight:700;font-size:15px}
+        .trip-time{font-size:11px;color:var(--muted)}
+        .trip-detail{font-size:12px;color:var(--muted);margin-top:4px}
+        .live-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+        .live-on{background:var(--green);animation:pulse 1.5s infinite}
+        .live-off{background:var(--red)}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.6)}}
+        .leaflet-marker-icon.breathing{animation:breathe 1.8s ease-in-out infinite}
+        @keyframes breathe{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.4);opacity:.5}}
     </style>
 </head>
 <body>
 
-<!-- Login Screen -->
 <div id="loginScreen">
     <div class="login-card">
-        <h2>🚗 Vehicle Tracker</h2>
-        <p>Sign in to view live data</p>
-        
-        <div class="input-group">
-            <label>Email</label>
-            <input type="email" id="emailInput" placeholder="supriyakaddi26@gmail.com" value="supriyakaddi26@gmail.com">
-        </div>
-
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="passwordInput" placeholder="••••••••" value="Supriya@2026">
-        </div>
-        
-        <button class="login-btn" id="loginBtn" onclick="handleLogin()">🔐 Sign In</button>
-        <div id="errorMessage"></div>
-        <div id="loginStatus" style="margin-top:10px;font-size:12px;color:#a0aec0;"></div>
+        <h2>🚗 Vehicle Trip Monitor</h2>
+        <p>Sign in to view live & historical trips</p>
+        <div class="input-group"><label>Email</label><input id="emailInput" type="email" value="supriyakaddi26@gmail.com"></div>
+        <div class="input-group"><label>Password</label><input id="passInput" type="password" value="Supriya@2026"></div>
+        <button class="btn" id="loginBtn" onclick="login()">🔐 Sign In</button>
+        <div id="errorMsg"></div>
     </div>
 </div>
 
-<!-- Main Dashboard -->
 <div id="mainApp">
     <nav class="navbar">
-        <h1>🚗 Vehicle Monitor</h1>
-        <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
-            <span style="font-size:13px;color:#a0aec0;" id="userEmail">--</span>
-            <span>
-                <span class="status-dot status-disconnected" id="dbStatusDot"></span>
-                <span style="font-size:12px;color:#a0aec0;" id="dbStatusText">DB: --</span>
-            </span>
-            <button class="logout-btn" onclick="handleLogout()">🚪 Logout</button>
+        <h1>🚗 Trip Monitor</h1>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--muted)" id="userEmail"></span>
+            <span><span class="live-indicator live-off" id="dbDot"></span><span style="font-size:11px;color:var(--muted)" id="dbText">Offline</span></span>
+            <button class="logout-btn" onclick="auth.signOut()">🚪 Logout</button>
         </div>
     </nav>
-
     <div class="container">
-        <!-- Stats -->
-        <div class="stats">
-            <div class="stat-card"><h3>Engine</h3><div class="value" id="relayStatus">--</div></div>
-            <div class="stat-card"><h3>Speed</h3><div class="value blue" id="speedValue">0</div></div>
-            <div class="stat-card"><h3>GPS</h3><div class="value" id="gpsStatus">--</div></div>
-            <div class="stat-card"><h3>Runtime</h3><div class="value yellow" id="runtimeValue">00:00</div></div>
-            <div class="stat-card"><h3>Driver</h3><div class="value" id="driverValue" style="font-size:18px;">--</div></div>
+        <div class="stat-row">
+            <div class="stat"><h3>Engine</h3><div class="val" id="stEngine">--</div></div>
+            <div class="stat"><h3>Speed</h3><div class="val blue" id="stSpeed">--</div></div>
+            <div class="stat"><h3>GPS</h3><div class="val" id="stGPS">--</div></div>
+            <div class="stat"><h3>Current Driver</h3><div class="val" style="font-size:16px" id="stDriver">--</div></div>
+            <div class="stat"><h3>Trips Today</h3><div class="val yellow" id="stTrips">0</div></div>
         </div>
-
-        <!-- Map & Live Data -->
         <div class="row">
-            <div class="card">
-                <h2>📍 Live Location</h2>
-                <div id="map"></div>
-            </div>
-            <div class="card">
-                <h2>📡 Sensor Data</h2>
-                <div id="liveData">
-                    <p><strong>Accel X:</strong> <span id="liveX">--</span></p>
-                    <p><strong>Accel Y:</strong> <span id="liveY">--</span></p>
-                    <p><strong>Accel Z:</strong> <span id="liveZ">--</span></p>
-                    <p><strong>Latitude:</strong> <span id="liveLat">--</span></p>
-                    <p><strong>Longitude:</strong> <span id="liveLng">--</span></p>
-                    <p><strong>Speed:</strong> <span id="liveSpeed">--</span> km/h</p>
-                    <p><strong>Geofence:</strong> <span id="liveGeofence">--</span></p>
-                    <p><strong>Last Update:</strong> <span id="liveTime">--</span></p>
-                </div>
-            </div>
+            <div class="card"><h2>📍 Live Map</h2><div id="map"></div></div>
+            <div class="card"><h2>📋 Trip History</h2><div class="trip-list" id="tripList"><div style="color:var(--muted);text-align:center;padding:20px">Loading trips...</div></div></div>
         </div>
     </div>
 </div>
 
 <script>
-// ============================================
-// FIREBASE CONFIG
-// ============================================
+// ===== CONFIG =====
 const firebaseConfig = {
     apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
     authDomain: "vehicle-web-dashboard.firebaseapp.com",
@@ -243,330 +116,208 @@ const firebaseConfig = {
     messagingSenderId: "890756908626",
     appId: "1:890756908626:web:8a1f205b40fe265134c18b"
 };
+const SHEETS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBeHFigSw8HUlD9PmSIFC3qAVAI6L3HDKRs_hkQR9jZ6RQzWXxqazn_cb5VqhxC32s2yYGQZx3DLZw/pub?gid=0&single=true&output=csv";
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// ============================================
-// GLOBAL STATE
-// ============================================
-let map, marker, sensorListener;
-let mapInitialized = false;
-const BANGALORE_CENTER = [12.9716, 77.5946];
+// ===== STATE =====
+let map, liveMarker, liveCircle, pathLines = [], tripMarkers = [];
+let trips = [];
+let currentTripIndex = -1;
+let liveRelayState = false;
 
-// ============================================
-// AUTH STATE LISTENER
-// ============================================
-auth.onAuthStateChanged((user) => {
-    console.log("[AUTH] State changed. User:", user ? user.email : "null");
-    
+// ===== AUTH =====
+auth.onAuthStateChanged(user => {
     if (user) {
-        // User is signed in
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('userEmail').textContent = user.email;
-        
-        // Initialize dashboard only after auth is confirmed
         initDashboard();
-        
-        // Start listening to sensor data
-        startSensorListener();
-        
-        // Listen to database connection status
-        listenToDBConnection();
-        
-        console.log("[AUTH] Dashboard initialized for:", user.email);
     } else {
-        // User is signed out
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('loginStatus').textContent = '';
-        
-        // Stop sensor listener
-        stopSensorListener();
-        
-        console.log("[AUTH] User signed out, dashboard hidden");
     }
 });
 
-// ============================================
-// LOGIN / LOGOUT
-// ============================================
-function handleLogin() {
+function login() {
     const email = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    const errorDiv = document.getElementById('errorMessage');
-    const loginBtn = document.getElementById('loginBtn');
-    const statusDiv = document.getElementById('loginStatus');
-    
-    if (!email || !password) {
-        errorDiv.textContent = "⚠️ Please fill in all fields";
-        errorDiv.style.display = 'block';
-        return;
-    }
-
-    loginBtn.disabled = true;
-    loginBtn.textContent = "Signing in...";
-    statusDiv.textContent = "Connecting to Firebase...";
-    errorDiv.style.display = 'none';
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            console.log("[AUTH] Login successful:", userCredential.user.email);
-            statusDiv.textContent = "✅ Login successful! Loading dashboard...";
-        })
-        .catch((error) => {
-            console.error("[AUTH] Login error:", error.code, error.message);
-            loginBtn.disabled = false;
-            loginBtn.textContent = "🔐 Sign In";
-            statusDiv.textContent = '';
-            
-            // User-friendly error messages
-            let friendlyMsg = error.message;
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                friendlyMsg = "❌ Invalid email or password. Please try again.";
-            } else if (error.code === 'auth/too-many-requests') {
-                friendlyMsg = "⚠️ Too many attempts. Please wait and try again.";
-            } else if (error.code === 'auth/network-request-failed') {
-                friendlyMsg = "🌐 Network error. Check your internet connection.";
-            }
-            
-            errorDiv.textContent = friendlyMsg;
-            errorDiv.style.display = 'block';
-        });
+    const pass = document.getElementById('passInput').value;
+    const err = document.getElementById('errorMsg');
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'Signing in...'; err.style.display = 'none';
+    auth.signInWithEmailAndPassword(email, pass)
+        .catch(e => { err.textContent = '❌ ' + e.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = '🔐 Sign In'; });
 }
+document.getElementById('passInput').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
 
-function handleLogout() {
-    console.log("[AUTH] Logging out...");
-    stopSensorListener();
-    auth.signOut();
-}
-
-// Allow Enter key to submit login
-document.getElementById('passwordInput')?.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') handleLogin();
-});
-
-// ============================================
-// DASHBOARD INIT
-// ============================================
+// ===== INIT =====
 function initDashboard() {
-    if (!mapInitialized) {
-        const mapEl = document.getElementById('map');
-        if (!mapEl) {
-            console.error("[MAP] Map element not found!");
-            return;
-        }
-        
-        map = L.map('map').setView(BANGALORE_CENTER, 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-        
-        marker = L.marker(BANGALORE_CENTER).addTo(map);
-        marker.bindPopup('Waiting for GPS...');
-        
-        mapInitialized = true;
-        console.log("[MAP] Map initialized");
-    } else {
-        // Refresh map size after display change
-        setTimeout(() => map.invalidateSize(), 200);
+    if (!map) {
+        map = L.map('map').setView([12.9716, 77.5946], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
     }
-}
-
-// ============================================
-// DATABASE CONNECTION LISTENER
-// ============================================
-function listenToDBConnection() {
-    const connectedRef = db.ref('.info/connected');
-    connectedRef.on('value', (snap) => {
-        const connected = snap.val();
-        const dot = document.getElementById('dbStatusDot');
-        const text = document.getElementById('dbStatusText');
-        
-        if (connected === true) {
-            dot.className = 'status-dot status-connected';
-            text.textContent = 'DB: Connected';
-            console.log("[DB] Connected to Firebase Realtime Database");
-        } else {
-            dot.className = 'status-dot status-disconnected';
-            text.textContent = 'DB: Disconnected';
-            console.log("[DB] Disconnected from Firebase Realtime Database");
-        }
+    db.ref('.info/connected').on('value', snap => {
+        const on = snap.val();
+        document.getElementById('dbDot').className = 'live-indicator ' + (on ? 'live-on' : 'live-off');
+        document.getElementById('dbText').textContent = on ? 'Online' : 'Offline';
     });
+    listenLive();
+    loadSheetTrips();
 }
 
-// ============================================
-// SENSOR DATA LISTENER
-// ============================================
-function startSensorListener() {
-    // Stop any existing listener first
-    stopSensorListener();
-    
-    console.log("[DB] Starting sensor data listener...");
-    
-    const sensorRef = db.ref('device_profile/sensor_data');
-    
-    sensorListener = sensorRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        
-        if (!data) {
-            console.log("[DB] No sensor data found at device_profile/sensor_data");
-            return;
-        }
-        
-        console.log("[DB] Sensor data received:", JSON.stringify(data).substring(0, 100));
-        
-        // Update UI
-        updateSensorUI(data);
-        updateMap(data);
-        updateGeofenceInfo();
-    }, (error) => {
-        console.error("[DB] Error reading sensor data:", error.message);
-        document.getElementById('dbStatusDot').className = 'status-dot status-disconnected';
-        document.getElementById('dbStatusText').textContent = 'DB: Error - ' + error.message;
-    });
-    
-    // Also listen to geofence
-    db.ref('device_profile/geofence').on('value', (snapshot) => {
-        const geoData = snapshot.val();
-        if (geoData) {
-            updateGeofenceUI(geoData);
-        }
-    });
-    
-    // Also listen to fingerprints
-    db.ref('device_profile/fingerprints').on('value', (snapshot) => {
-        const fpData = snapshot.val();
-        if (fpData) {
-            console.log("[DB] Fingerprints loaded:", Object.keys(fpData).length);
-        }
-    });
-}
+// ===== LIVE DATA =====
+function listenLive() {
+    db.ref('device_profile/sensor_data').on('value', snap => {
+        const d = snap.val();
+        if (!d) return;
+        const lat = parseFloat(d.lat || 0), lng = parseFloat(d.lng || 0);
+        const relayOn = (d.relay_state === true || d.relay_state === 'true');
+        const speed = parseFloat(d.speed || 0);
 
-function stopSensorListener() {
-    if (sensorListener) {
-        try {
-            db.ref('device_profile/sensor_data').off('value', sensorListener);
-            console.log("[DB] Sensor listener stopped");
-        } catch(e) {
-            console.error("[DB] Error stopping listener:", e);
-        }
-        sensorListener = null;
-    }
-}
+        document.getElementById('stEngine').innerHTML = relayOn ? '<span class="green">🟢 ON</span>' : '<span class="red">🔴 OFF</span>';
+        document.getElementById('stSpeed').textContent = speed.toFixed(1) + ' km/h';
+        document.getElementById('stGPS').innerHTML = (lat && lng) ? '<span class="green">📍 Fixed</span>' : '<span class="yellow">⏳ Searching</span>';
+        document.getElementById('stDriver').textContent = d.driver || 'None';
 
-// ============================================
-// UPDATE UI
-// ============================================
-function updateSensorUI(data) {
-    // Relay / Engine
-    const relayEl = document.getElementById('relayStatus');
-    if (relayEl) {
-        const isOn = (data.relay_state === true || data.relay_state === 'true');
-        relayEl.textContent = isOn ? '🟢 ON' : '🔴 OFF';
-        relayEl.className = 'value ' + (isOn ? 'green' : 'red');
-    }
-    
-    // Speed
-    const speedEl = document.getElementById('speedValue');
-    if (speedEl) {
-        const speed = parseFloat(data.speed || 0);
-        speedEl.textContent = speed.toFixed(1) + ' km/h';
-    }
-    
-    // GPS Status
-    const gpsEl = document.getElementById('gpsStatus');
-    if (gpsEl) {
-        const hasGPS = (data.lat && data.lat !== 0 && data.lng && data.lng !== 0);
-        gpsEl.textContent = hasGPS ? '📍 Fixed' : '⏳ Searching';
-        gpsEl.className = 'value ' + (hasGPS ? 'green' : 'yellow');
-    }
-    
-    // Runtime
-    const runtimeEl = document.getElementById('runtimeValue');
-    if (runtimeEl) {
-        const sec = parseInt(data.runtime || 0);
-        const mins = Math.floor(sec / 60);
-        const hrs = Math.floor(mins / 60);
-        runtimeEl.textContent = `${hrs}h ${mins % 60}m`;
-    }
-    
-    // Driver
-    const driverEl = document.getElementById('driverValue');
-    if (driverEl) {
-        driverEl.textContent = data.driver || 'None';
-    }
-    
-    // Live sensor values
-    setText('liveX', (data.accel_x || 0).toFixed(2));
-    setText('liveY', (data.accel_y || 0).toFixed(2));
-    setText('liveZ', (data.accel_z || 0).toFixed(2));
-    setText('liveLat', (data.lat || 0).toFixed(6));
-    setText('liveLng', (data.lng || 0).toFixed(6));
-    setText('liveSpeed', (data.speed || 0).toFixed(1));
-    setText('liveTime', new Date().toLocaleTimeString());
-}
-
-function setText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-}
-
-function updateMap(data) {
-    if (!map || !marker) return;
-    
-    const lat = parseFloat(data.lat || data.latitude || 0);
-    const lng = parseFloat(data.lng || data.longitude || 0);
-    
-    if (lat && lng && lat !== 0 && lng !== 0) {
-        marker.setLatLng([lat, lng]);
-        marker.setPopupContent(`
-            <b>Vehicle Location</b><br>
-            Lat: ${lat.toFixed(6)}<br>
-            Lng: ${lng.toFixed(6)}<br>
-            Speed: ${(data.speed || 0).toFixed(1)} km/h<br>
-            Driver: ${data.driver || 'None'}
-        `);
-        
-        // Only pan if not already focused on vehicle
-        const currentCenter = map.getCenter();
-        const dist = Math.sqrt(
-            Math.pow(currentCenter.lat - lat, 2) + 
-            Math.pow(currentCenter.lng - lng, 2)
-        );
-        if (dist > 0.01) {
+        if (lat && lng) {
+            if (!liveMarker) {
+                const icon = L.divIcon({
+                    html: '<div style="width:18px;height:18px;background:#00d4ff;border-radius:50%;border:3px solid #fff;box-shadow:0 0 15px #00d4ff;animation:breathe 1.8s ease-in-out infinite"></div>',
+                    className: 'breathing',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                });
+                liveMarker = L.marker([lat, lng], {icon}).addTo(map);
+            } else {
+                liveMarker.setLatLng([lat, lng]);
+            }
+            if (!liveCircle) liveCircle = L.circle([lat, lng], {radius: 30, color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.12, weight: 2}).addTo(map);
+            else liveCircle.setLatLng([lat, lng]);
             map.panTo([lat, lng]);
         }
-    }
-}
 
-function updateGeofenceInfo() {
-    db.ref('device_profile/geofence').once('value').then(snapshot => {
-        const data = snapshot.val();
-        if (data) {
-            updateGeofenceUI(data);
+        if (relayOn !== liveRelayState) {
+            liveRelayState = relayOn;
+            if (relayOn) {
+                loadSheetTrips();
+            }
         }
     });
 }
 
-function updateGeofenceUI(data) {
-    const geoEl = document.getElementById('liveGeofence');
-    if (geoEl) {
-        geoEl.textContent = data.active ? '✅ Active' : '❌ Inactive';
-        geoEl.style.color = data.active ? '#48bb78' : '#fc8181';
+// ===== SHEET TRIPS =====
+function loadSheetTrips() {
+    fetch(SHEETS_CSV)
+        .then(r => r.text())
+        .then(csv => {
+            const rows = csv.split('\n').filter(l => l.trim());
+            if (rows.length < 2) return;
+            const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+            const data = [];
+            for (let i = 1; i < rows.length; i++) {
+                const cols = rows[i].split(',').map(c => c.trim());
+                if (cols.length < 7) continue;
+                const obj = {};
+                headers.forEach((h, idx) => { obj[h] = cols[idx] || ''; });
+                data.push(obj);
+            }
+            trips = extractTrips(data);
+            document.getElementById('stTrips').textContent = trips.length;
+            renderTripList();
+            renderAllTripsOnMap();
+        }).catch(e => console.error('Sheets error:', e));
+}
+
+function extractTrips(rows) {
+    const tripList = [];
+    let current = null;
+    for (const row of rows) {
+        const relay = (row.relay_state || '').toUpperCase() === 'TRUE';
+        const lat = parseFloat(row.latitude || 0);
+        const lng = parseFloat(row.longitude || 0);
+        const ts = new Date(row.timestamp || Date.now());
+        const driver = row.driver || 'None';
+        const speed = parseFloat(row.speed || 0);
+        const runtime = row.run_time || '0:00:00';
+
+        if (relay && !current) {
+            current = { driver, startTime: ts, endTime: ts, points: [], runtime: '0:00:00', startRuntime: runtime };
+        }
+        if (current) {
+            if (lat && lng) current.points.push({ lat, lng, ts, speed });
+            current.endTime = ts;
+            current.runtime = runtime;
+            if (!relay) {
+                tripList.push(current);
+                current = null;
+            }
+        }
+    }
+    if (current) tripList.push(current);
+    return tripList;
+}
+
+function renderTripList() {
+    const el = document.getElementById('tripList');
+    if (!trips.length) { el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No trips recorded yet</div>'; return; }
+    let html = '';
+    trips.forEach((t, i) => {
+        const dist = calcTripDistance(t);
+        html += `<div class="trip-item ${i === currentTripIndex ? 'active' : ''}" onclick="focusTrip(${i})">
+            <div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div>
+            <div class="trip-detail">📏 ${dist.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div>
+            <div class="trip-detail">🏁 End: ${t.endTime.toLocaleString()}</div>
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+function focusTrip(i) {
+    currentTripIndex = i;
+    renderTripList();
+    const t = trips[i];
+    if (t.points.length) {
+        clearTripLines();
+        const latlngs = t.points.map(p => [p.lat, p.lng]);
+        const line = L.polyline(latlngs, {color:'#f6ad55', weight:4}).addTo(map);
+        pathLines.push(line);
+        const bounds = L.latLngBounds(latlngs);
+        map.fitBounds(bounds, {padding:[40,40]});
     }
 }
 
-// ============================================
-// INITIALIZATION
-// ============================================
-console.log("[SYSTEM] Vehicle Dashboard loaded");
-console.log("[SYSTEM] Firebase SDK version:", firebase.SDK_VERSION);
-console.log("[SYSTEM] Waiting for authentication...");
-</script>
+function renderAllTripsOnMap() {
+    clearTripLines();
+    const colors = ['#48bb78','#63b3ed','#f6ad55','#fc8181','#9f7aea','#00d4ff'];
+    trips.forEach((t, i) => {
+        if (t.points.length < 2) return;
+        const latlngs = t.points.map(p => [p.lat, p.lng]);
+        const line = L.polyline(latlngs, {color: colors[i % colors.length], weight: 2.5, opacity: 0.7}).addTo(map);
+        pathLines.push(line);
+        const m = L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:6,fillColor:colors[i%6],color:'#fff',weight:2,fillOpacity:1})
+            .addTo(map).bindPopup(`<b>${t.driver}</b><br>Start: ${t.startTime.toLocaleString()}<br>Runtime: ${t.runtime}`);
+        tripMarkers.push(m);
+    });
+}
 
+function clearTripLines() {
+    pathLines.forEach(l => map.removeLayer(l)); pathLines = [];
+    tripMarkers.forEach(m => map.removeLayer(m)); tripMarkers = [];
+}
+
+function calcTripDistance(t) {
+    let d = 0;
+    for (let i = 1; i < t.points.length; i++) {
+        const r = 6371;
+        const dLat = (t.points[i].lat - t.points[i-1].lat) * Math.PI / 180;
+        const dLng = (t.points[i].lng - t.points[i-1].lng) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(t.points[i-1].lat*Math.PI/180) * Math.cos(t.points[i].lat*Math.PI/180) * Math.sin(dLng/2)**2;
+        d += r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    return d;
+}
+</script>
 </body>
 </html>
