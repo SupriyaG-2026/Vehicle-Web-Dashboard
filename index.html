@@ -38,7 +38,7 @@
         .logout-btn{background:transparent;color:var(--red);border:1px solid var(--red);padding:6px 16px;border-radius:6px;cursor:pointer}
         .show-all-btn{background:var(--accent);color:#0a0e17;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px}
         .tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)}
-        .tab{padding:12px 24px;cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s;background:transparent;border-top:none;border-left:none;border-right:none}
+        .tab{padding:12px 24px;cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s;background:transparent;border:none}
         .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
         .tab:hover{color:var(--text)}
         .container{max-width:1400px;margin:20px auto;padding:0 20px}
@@ -79,14 +79,14 @@
         .data-table .relay-false{color:var(--red)}
         .table-wrap{max-height:450px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
         .sheet-info{font-size:12px;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center}
-        .auto-refresh{font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px}
-        .auto-refresh.off{color:var(--muted)}
         .new-badge{background:var(--green);color:#000;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:6px;animation:pulse 1.5s infinite}
         .refresh-sheet-btn{background:rgba(99,179,237,.2);color:#63b3ed;border:1px solid rgba(99,179,237,.2);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px}
         .toggle-auto-btn{background:rgba(72,187,120,.2);color:var(--green);border:1px solid rgba(72,187,120,.3);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px}
         .toggle-auto-btn.paused{background:rgba(252,129,129,.2);color:var(--red);border-color:rgba(252,129,129,.3)}
         .search-box{background:#0f1123;border:1px solid var(--border);color:#fff;padding:7px 10px;border-radius:5px;width:180px;font-size:12px}
         .last-refresh{font-size:10px;color:var(--muted)}
+        .filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center}
+        .filter-bar select{background:#0f1123;border:1px solid var(--border);color:#fff;padding:6px 8px;border-radius:4px;font-size:11px}
     </style>
 </head>
 <body>
@@ -131,28 +131,40 @@
             <div class="card">
                 <h2>📍 Live Map <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto">🗺️ Show All</button></h2>
                 <div id="map"></div>
+                <div class="map-legend">
+                    <div class="legend-item"><div class="legend-dot live"></div> Live Vehicle</div>
+                    <div class="legend-item"><div style="width:12px;height:3px;background:#f6ad55;border-radius:2px"></div> Selected Trip</div>
+                </div>
             </div>
             <div class="card">
                 <h2>📋 Trips <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto;font-size:11px">🗺️ All</button></h2>
-                <div class="trip-list" id="tripList"><div style="color:var(--muted);text-align:center;padding:20px">Loading...</div></div>
+                <div class="trip-list" id="tripList"><div style="color:var(--muted);text-align:center;padding:20px">Loading trips...</div></div>
             </div>
         </div>
     </div>
 
     <div id="tabContentSheets" class="container" style="display:none">
         <div class="card">
-            <h2>📊 Live Data Log <span style="font-size:11px;color:var(--muted);font-weight:normal">(new rows appear automatically)</span></h2>
+            <h2>📊 Live Data Log <span style="font-size:11px;color:var(--muted);font-weight:normal">(auto-updates every 10s)</span></h2>
             <div class="sheet-info">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                     <span id="sheetRowCount">0 rows</span>
                     <span id="newRowsBadge" style="display:none" class="new-badge">NEW</span>
-                    <span class="auto-refresh" id="autoRefreshStatus">🔄 Live (10s)</span>
+                    <span style="font-size:11px;color:var(--green)" id="autoStatus">🔄 Live (10s)</span>
                     <span class="last-refresh" id="lastRefreshTime"></span>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                     <input class="search-box" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()">
+                    <select id="filterRelay" onchange="filterTable()">
+                        <option value="">All Relay</option>
+                        <option value="TRUE">ON Only</option>
+                        <option value="FALSE">OFF Only</option>
+                    </select>
+                    <select id="filterDriver" onchange="filterTable()">
+                        <option value="">All Drivers</option>
+                    </select>
                     <button class="toggle-auto-btn" id="toggleAutoBtn" onclick="toggleAutoRefresh()">⏸ Pause</button>
-                    <button class="refresh-sheet-btn" onclick="loadSheetData()">🔄 Full Reload</button>
+                    <button class="refresh-sheet-btn" onclick="fullReload()">🔄 Full Reload</button>
                 </div>
             </div>
             <div class="table-wrap" id="tableWrap">
@@ -172,7 +184,7 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading data...</td></tr>
+                        <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading data from Apps Script...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -181,7 +193,9 @@
 </div>
 
 <script>
-// ===== CONFIG =====
+// ============================================
+// CONFIGURATION
+// ============================================
 const firebaseConfig = {
     apiKey: "AIzaSyDBQd85LTfSl6crkbIiM6HdZ48nxwE60WI",
     authDomain: "vehicle-web-dashboard.firebaseapp.com",
@@ -191,21 +205,27 @@ const firebaseConfig = {
     messagingSenderId: "890756908626",
     appId: "1:890756908626:web:8a1f205b40fe265134c18b"
 };
-const SHEETS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBeHFigSw8HUlD9PmSIFC3qAVAI6L3HDKRs_hkQR9jZ6RQzWXxqazn_cb5VqhxC32s2yYGQZx3DLZw/pub?gid=0&single=true&output=csv";
+
+// ⚠️ CHANGE THIS to your NEW Apps Script Web App URL
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2ITFcT_Eq9IxLKqE704fgIjj1ccH7o0LRmwjpcF7Q7HscDReq9IeczZ_RQq82EqHyUQ/exec";
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// ===== STATE =====
+// ============================================
+// GLOBAL STATE
+// ============================================
 let map, liveMarker, liveCircle, pathLines = [], tripMarkers = [];
 let trips = [], selectedTripIndex = -1, liveRelayState = false, isFollowingLive = true;
 let allSheetRows = [], sortColumn = 0, sortAsc = false;
 let autoRefreshEnabled = true, autoRefreshInterval = null, currentTab = 'map';
-let knownTimestamps = new Set();  // Track known rows to detect new ones
-let newRowCount = 0;
+let knownTimestamps = new Set(), newRowCount = 0, lastKnownTimestamp = null;
+let driverSet = new Set();
 
-// ===== AUTH =====
+// ============================================
+// AUTHENTICATION
+// ============================================
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('loginScreen').style.display = 'none';
@@ -230,7 +250,9 @@ function login() {
 }
 document.getElementById('passInput').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
 
-// ===== TABS =====
+// ============================================
+// TABS
+// ============================================
 function switchTab(tab) {
     currentTab = tab;
     document.getElementById('tabMap').classList.toggle('active', tab === 'map');
@@ -238,32 +260,31 @@ function switchTab(tab) {
     document.getElementById('tabContentMap').style.display = tab === 'map' ? 'block' : 'none';
     document.getElementById('tabContentSheets').style.display = tab === 'sheets' ? 'block' : 'none';
     if (tab === 'map' && map) setTimeout(() => map.invalidateSize(), 200);
-    if (tab === 'sheets') { loadSheetData(); startAutoRefresh(); }
+    if (tab === 'sheets') { fullReload(); startAutoRefresh(); }
     else stopAutoRefresh();
 }
 
-// ===== AUTO REFRESH =====
+// ============================================
+// AUTO REFRESH
+// ============================================
 function startAutoRefresh() {
     stopAutoRefresh();
     if (autoRefreshEnabled) {
-        autoRefreshInterval = setInterval(() => checkForNewRows(), 10000);  // 10 seconds
-        updateAutoRefreshUI();
+        autoRefreshInterval = setInterval(() => checkForNewRows(), 10000);
+        updateAutoUI();
     }
 }
 function stopAutoRefresh() { if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; } }
-function toggleAutoRefresh() {
-    autoRefreshEnabled = !autoRefreshEnabled;
-    if (currentTab === 'sheets') { if (autoRefreshEnabled) startAutoRefresh(); else stopAutoRefresh(); }
-    updateAutoRefreshUI();
-}
-function updateAutoRefreshUI() {
-    const s = document.getElementById('autoRefreshStatus');
-    const b = document.getElementById('toggleAutoBtn');
-    if (autoRefreshEnabled) { s.textContent = '🔄 Live (10s)'; s.className = 'auto-refresh'; b.textContent = '⏸ Pause'; b.className = 'toggle-auto-btn'; }
-    else { s.textContent = '⏸ Paused'; s.className = 'auto-refresh off'; b.textContent = '▶ Resume'; b.className = 'toggle-auto-btn paused'; }
+function toggleAutoRefresh() { autoRefreshEnabled = !autoRefreshEnabled; if (currentTab === 'sheets') { if (autoRefreshEnabled) startAutoRefresh(); else stopAutoRefresh(); } updateAutoUI(); }
+function updateAutoUI() {
+    const s = document.getElementById('autoStatus'); const b = document.getElementById('toggleAutoBtn');
+    if (autoRefreshEnabled) { s.textContent = '🔄 Live (10s)'; b.textContent = '⏸ Pause'; b.className = 'toggle-auto-btn'; }
+    else { s.textContent = '⏸ Paused'; b.textContent = '▶ Resume'; b.className = 'toggle-auto-btn paused'; }
 }
 
-// ===== INIT =====
+// ============================================
+// INIT DASHBOARD
+// ============================================
 function initDashboard() {
     if (!map) {
         map = L.map('map').setView([12.9716, 77.5946], 14);
@@ -275,160 +296,209 @@ function initDashboard() {
         document.getElementById('dbDot').className = 'live-indicator ' + (on ? 'live-on' : 'live-off');
         document.getElementById('dbText').textContent = on ? 'Online' : 'Offline';
     });
-    listenLive(); loadSheetTrips(); updateAutoRefreshUI();
+    listenLive();
+    loadTripsFromAPI();
+    updateAutoUI();
 }
 
-// ===== LIVE DATA =====
+// ============================================
+// LIVE FIREBASE DATA
+// ============================================
 function listenLive() {
     db.ref('device_profile/sensor_data').on('value', snap => {
         const d = snap.val(); if (!d) return;
-        const lat = parseFloat(d.lat||0), lng = parseFloat(d.lng||0);
-        const relayOn = (d.relay_state===true||d.relay_state==='true');
-        document.getElementById('stEngine').innerHTML = relayOn?'<span class="green">🟢 ON</span>':'<span class="red">🔴 OFF</span>';
-        document.getElementById('stSpeed').textContent = (parseFloat(d.speed||0)).toFixed(1)+' km/h';
-        document.getElementById('stGPS').innerHTML = (lat&&lng)?'<span class="green">📍 Fixed</span>':'<span class="yellow">⏳ Searching</span>';
-        document.getElementById('stDriver').textContent = d.driver||'None';
-        if(lat&&lng)updateLiveMarker(lat,lng);
-        if(relayOn!==liveRelayState){liveRelayState=relayOn;if(relayOn)setTimeout(loadSheetTrips,2000);if(currentTab==='sheets')setTimeout(()=>checkForNewRows(),3000);}
+        const lat = parseFloat(d.lat || 0), lng = parseFloat(d.lng || 0);
+        const relayOn = (d.relay_state === true || d.relay_state === 'true');
+        const speed = parseFloat(d.speed || 0);
+        document.getElementById('stEngine').innerHTML = relayOn ? '<span class="green">🟢 ON</span>' : '<span class="red">🔴 OFF</span>';
+        document.getElementById('stSpeed').textContent = speed.toFixed(1) + ' km/h';
+        document.getElementById('stGPS').innerHTML = (lat && lng) ? '<span class="green">📍 Fixed</span>' : '<span class="yellow">⏳ Searching</span>';
+        document.getElementById('stDriver').textContent = d.driver || 'None';
+        if (lat && lng) updateLiveMarker(lat, lng);
+        if (relayOn !== liveRelayState) {
+            liveRelayState = relayOn;
+            setTimeout(loadTripsFromAPI, 3000);
+            if (currentTab === 'sheets') setTimeout(() => checkForNewRows(), 4000);
+        }
     });
 }
 
-function createBlueDotIcon(){return L.divIcon({html:`<div style="position:relative;width:22px;height:22px;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div></div>`,className:'',iconSize:[40,40],iconAnchor:[20,20]});}
-function updateLiveMarker(lat,lng){if(!liveMarker){liveMarker=L.marker([lat,lng],{icon:createBlueDotIcon(),zIndexOffset:1000}).addTo(map).bindPopup('📍 Live');}else liveMarker.setLatLng([lat,lng]);if(!liveCircle)liveCircle=L.circle([lat,lng],{radius:15,color:'#4285F4',fillColor:'#4285F4',fillOpacity:.1,weight:1.5,dashArray:'4,4'}).addTo(map);else liveCircle.setLatLng([lat,lng]);if(isFollowingLive&&selectedTripIndex<0)map.panTo([lat,lng],{animate:true,duration:.5});}
+// ============================================
+// GOOGLE MAPS-STYLE BLUE DOT
+// ============================================
+function createBlueDotIcon() {
+    return L.divIcon({
+        html: `<div style="position:relative;width:22px;height:22px;">
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div></div>`,
+        className: '', iconSize: [40, 40], iconAnchor: [20, 20]
+    });
+}
+function updateLiveMarker(lat, lng) {
+    if (!liveMarker) { liveMarker = L.marker([lat, lng], {icon: createBlueDotIcon(), zIndexOffset: 1000}).addTo(map).bindPopup('📍 Live Vehicle'); }
+    else liveMarker.setLatLng([lat, lng]);
+    if (!liveCircle) liveCircle = L.circle([lat, lng], {radius: 15, color: '#4285F4', fillColor: '#4285F4', fillOpacity: 0.1, weight: 1.5, dashArray: '4,4'}).addTo(map);
+    else liveCircle.setLatLng([lat, lng]);
+    if (isFollowingLive && selectedTripIndex < 0) map.panTo([lat, lng], {animate: true, duration: 0.5});
+}
 
-// ===== SHEET TRIPS =====
-function loadSheetTrips(){fetch(SHEETS_CSV+'&_='+Date.now()).then(r=>r.text()).then(csv=>{const rows=csv.split('\n').filter(l=>l.trim());if(rows.length<2)return;const headers=rows[0].split(',').map(h=>h.trim().toLowerCase().replace(/\s+/g,'_'));const data=[];for(let i=1;i<rows.length;i++){const cols=rows[i].split(',').map(c=>c.trim());if(cols.length<7)continue;const obj={};headers.forEach((h,idx)=>{obj[h]=cols[idx]||'';});data.push(obj);}trips=extractTrips(data);document.getElementById('stTrips').textContent=trips.length;renderTripList();if(selectedTripIndex<0)renderAllTripsOnMap();}).catch(e=>console.error(e));}
-function extractTrips(rows){const tl=[];let c=null;for(const r of rows){const relay=(r.relay_state||'').toUpperCase()==='TRUE';const lat=parseFloat(r.latitude||0),lng=parseFloat(r.longitude||0);const ts=new Date(r.timestamp||Date.now());const d=r.driver||'None';if(relay&&!c)c={driver:d,startTime:ts,endTime:ts,points:[],runtime:'0:00:00'};if(c){if(lat&&lng)c.points.push({lat,lng,ts});c.endTime=ts;c.runtime=r.run_time||'0:00:00';if(!relay){tl.push(c);c=null;}}}if(c)tl.push(c);return tl;}
-function renderTripList(){const el=document.getElementById('tripList');if(!trips.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No trips yet</div>';return;}let h='';trips.forEach((t,i)=>{const d=calcTripDistance(t);h+=`<div class="trip-item ${i===selectedTripIndex?'selected':''}" onclick="toggleTrip(${i})"><div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div><div class="trip-detail">📏 ${d.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div></div>`;});el.innerHTML=h;}
-function toggleTrip(i){if(selectedTripIndex===i)showAllTrips();else{selectedTripIndex=i;isFollowingLive=false;renderTripList();zoomToTrip(i);}}
-function showAllTrips(){selectedTripIndex=-1;isFollowingLive=true;renderTripList();renderAllTripsOnMap();if(liveMarker){const ll=liveMarker.getLatLng();map.setView([ll.lat,ll.lng],14,{animate:true});}}
-function zoomToTrip(i){const t=trips[i];if(t.points.length){clearTripLines();const ll=t.points.map(p=>[p.lat,p.lng]);pathLines.push(L.polyline(ll,{color:'#f6ad55',weight:4}).addTo(map));tripMarkers.push(L.circleMarker([t.points[0].lat,t.points[0].lng],{radius:8,fillColor:'#f6ad55',color:'#fff',weight:2,fillOpacity:1}).addTo(map));const last=t.points[t.points.length-1];tripMarkers.push(L.circleMarker([last.lat,last.lng],{radius:8,fillColor:'#fc8181',color:'#fff',weight:2,fillOpacity:1}).addTo(map));map.fitBounds(L.latLngBounds(ll),{padding:[40,40]});}}
-function renderAllTripsOnMap(){clearTripLines();const cols=['#48bb78','#63b3ed','#9f7aea','#00d4ff','#f6ad55','#fc8181'];trips.forEach((t,i)=>{if(t.points.length<2)return;const ll=t.points.map(p=>[p.lat,p.lng]);pathLines.push(L.polyline(ll,{color:cols[i%cols.length],weight:2.5,opacity:.7}).addTo(map));tripMarkers.push(L.circleMarker([t.points[0].lat,t.points[0].lng],{radius:6,fillColor:cols[i%6],color:'#fff',weight:2,fillOpacity:1}).addTo(map));});}
-function clearTripLines(){pathLines.forEach(l=>map.removeLayer(l));pathLines=[];tripMarkers.forEach(m=>map.removeLayer(m));tripMarkers=[];}
-function calcTripDistance(t){let d=0;for(let i=1;i<t.points.length;i++){const r=6371;const dLat=(t.points[i].lat-t.points[i-1].lat)*Math.PI/180;const dLng=(t.points[i].lng-t.points[i-1].lng)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(t.points[i-1].lat*Math.PI/180)*Math.cos(t.points[i].lat*Math.PI/180)*Math.sin(dLng/2)**2;d+=r*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}return d;}
-
-// ===== LIVE SHEETS: DETECT NEW ROWS & APPEND =====
-function checkForNewRows() {
-    fetch(SHEETS_CSV + '&_=' + Date.now())
-        .then(r => r.text())
-        .then(csv => {
-            const rows = csv.split('\n').filter(l => l.trim());
-            if (rows.length < 2) return;
-            const headers = rows[0].split(',').map(h => h.trim());
-            
-            const freshRows = [];
-            const freshTimestamps = new Set();
-            
-            for (let i = 1; i < rows.length; i++) {
-                const cols = rows[i].split(',').map(c => c.trim());
-                if (cols.length >= 7) {
-                    const ts = cols[0];  // Timestamp is the unique key
-                    freshTimestamps.add(ts);
-                    freshRows.push(cols);
-                }
+// ============================================
+// LOAD TRIPS FROM APPS SCRIPT API
+// ============================================
+function loadTripsFromAPI() {
+    fetch(APPS_SCRIPT_URL + '?action=getTrips')
+        .then(r => r.json())
+        .then(data => {
+            if (data.trips) {
+                trips = data.trips.map(t => ({
+                    driver: t.driver,
+                    startTime: new Date(t.startTime),
+                    endTime: new Date(t.endTime),
+                    points: t.points || [],
+                    runtime: t.runtime || '0:00:00',
+                    distance: t.distance || 0
+                }));
+                document.getElementById('stTrips').textContent = trips.length;
+                renderTripList();
+                if (selectedTripIndex < 0) renderAllTripsOnMap();
             }
+        }).catch(e => console.error('Trips API error:', e));
+}
+
+function renderTripList() {
+    const el = document.getElementById('tripList');
+    if (!trips.length) { el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No trips yet</div>'; return; }
+    let html = '';
+    trips.forEach((t, i) => {
+        html += `<div class="trip-item ${i === selectedTripIndex ? 'selected' : ''}" onclick="toggleTrip(${i})">
+            <div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div>
+            <div class="trip-detail">📏 ${t.distance.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div></div>`;
+    });
+    el.innerHTML = html;
+}
+
+function toggleTrip(i) { if (selectedTripIndex === i) showAllTrips(); else { selectedTripIndex = i; isFollowingLive = false; renderTripList(); zoomToTrip(i); } }
+function showAllTrips() { selectedTripIndex = -1; isFollowingLive = true; renderTripList(); renderAllTripsOnMap(); if (liveMarker) { const ll = liveMarker.getLatLng(); map.setView([ll.lat, ll.lng], 14, {animate: true}); } }
+function zoomToTrip(i) {
+    const t = trips[i];
+    if (t.points.length) {
+        clearTripLines();
+        const ll = t.points.map(p => [p.lat, p.lng]);
+        pathLines.push(L.polyline(ll, {color:'#f6ad55', weight:4}).addTo(map));
+        tripMarkers.push(L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:8,fillColor:'#f6ad55',color:'#fff',weight:2,fillOpacity:1}).addTo(map).bindPopup(`Start: ${t.startTime.toLocaleString()}`));
+        const last = t.points[t.points.length-1];
+        tripMarkers.push(L.circleMarker([last.lat, last.lng], {radius:8,fillColor:'#fc8181',color:'#fff',weight:2,fillOpacity:1}).addTo(map).bindPopup(`End: ${t.endTime.toLocaleString()}<br>Runtime: ${t.runtime}`));
+        map.fitBounds(L.latLngBounds(ll), {padding:[40,40]});
+    }
+}
+function renderAllTripsOnMap() {
+    clearTripLines();
+    const cols = ['#48bb78','#63b3ed','#9f7aea','#00d4ff','#f6ad55','#fc8181'];
+    trips.forEach((t, i) => {
+        if (t.points.length < 2) return;
+        const ll = t.points.map(p => [p.lat, p.lng]);
+        pathLines.push(L.polyline(ll, {color:cols[i%cols.length], weight:2.5, opacity:0.7}).addTo(map));
+        tripMarkers.push(L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:6,fillColor:cols[i%6],color:'#fff',weight:2,fillOpacity:1}).addTo(map).bindPopup(`${t.driver}<br>${t.startTime.toLocaleString()}`));
+    });
+}
+function clearTripLines() { pathLines.forEach(l => map.removeLayer(l)); pathLines = []; tripMarkers.forEach(m => map.removeLayer(m)); tripMarkers = []; }
+
+// ============================================
+// LIVE LOG - CHECK FOR NEW ROWS
+// ============================================
+function checkForNewRows() {
+    const url = lastKnownTimestamp 
+        ? APPS_SCRIPT_URL + '?action=getNew&last=' + encodeURIComponent(lastKnownTimestamp)
+        : APPS_SCRIPT_URL + '?action=getAll';
+    
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { console.error('API error:', data.error); return; }
             
-            // Find NEW rows (timestamps not in knownTimestamps)
-            const newRows = freshRows.filter(row => !knownTimestamps.has(row[0]));
+            const rows = data.rows || [];
             
-            if (newRows.length > 0) {
-                // Append new rows to the table
-                appendNewRows(newRows);
-                
-                // Update known timestamps
-                newRows.forEach(row => knownTimestamps.add(row[0]));
-                
-                // Update allSheetRows for search/sort
-                allSheetRows = freshRows;
-                
-                // Show notification
-                newRowCount += newRows.length;
-                const badge = document.getElementById('newRowsBadge');
-                badge.textContent = '+' + newRowCount;
-                badge.style.display = 'inline-block';
-                setTimeout(() => { badge.style.display = 'none'; newRowCount = 0; }, 3000);
-                
-                document.getElementById('sheetRowCount').textContent = freshRows.length + ' rows';
-                document.getElementById('lastRefreshTime').textContent = 'New: ' + new Date().toLocaleTimeString();
-                
-                // Auto-scroll to bottom to show new rows
-                const tableWrap = document.getElementById('tableWrap');
-                if (tableWrap) {
-                    tableWrap.scrollTop = tableWrap.scrollHeight;
+            if (rows.length > 0) {
+                if (lastKnownTimestamp === null) {
+                    // First load - full table
+                    allSheetRows = rows.map(r => [
+                        r.timestamp || '', r.accel_x || '', r.accel_y || '', r.accel_z || '',
+                        r.driver || '', r.latitude || r.lat || '', r.longitude || r.lng || '',
+                        r.speed || '', r.relay_state || '', r.run_time || ''
+                    ]);
+                    knownTimestamps = new Set(allSheetRows.map(r => r[0]));
+                    updateDriverFilter();
+                    renderTable(allSheetRows);
+                    document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows';
+                } else {
+                    // Incremental - append new rows
+                    const newRows = rows.map(r => [
+                        r.timestamp || '', r.accel_x || '', r.accel_y || '', r.accel_z || '',
+                        r.driver || '', r.latitude || r.lat || '', r.longitude || r.lng || '',
+                        r.speed || '', r.relay_state || '', r.run_time || ''
+                    ]);
+                    
+                    const trulyNew = newRows.filter(r => !knownTimestamps.has(r[0]));
+                    
+                    if (trulyNew.length > 0) {
+                        trulyNew.forEach(r => knownTimestamps.add(r[0]));
+                        allSheetRows.push(...trulyNew);
+                        appendNewRows(trulyNew);
+                        updateDriverFilter();
+                        
+                        newRowCount += trulyNew.length;
+                        const badge = document.getElementById('newRowsBadge');
+                        badge.textContent = '+' + newRowCount;
+                        badge.style.display = 'inline-block';
+                        setTimeout(() => { badge.style.display = 'none'; newRowCount = 0; }, 3000);
+                        
+                        document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows';
+                    }
                 }
-            } else {
+                
+                if (data.latestTimestamp) lastKnownTimestamp = data.latestTimestamp;
+                else if (rows.length > 0) lastKnownTimestamp = rows[rows.length-1].timestamp;
+                
                 document.getElementById('lastRefreshTime').textContent = 'Checked: ' + new Date().toLocaleTimeString();
             }
-        })
-        .catch(e => console.error('Check error:', e));
+        }).catch(e => console.error('Check error:', e));
 }
 
 function appendNewRows(newRows) {
     const tbody = document.getElementById('tableBody');
-    
-    // Remove "No data" message if present
-    if (tbody.children.length === 1 && tbody.children[0].cells.length === 1) {
-        tbody.innerHTML = '';
-    }
+    if (tbody.children.length === 1 && tbody.children[0].cells.length === 1) tbody.innerHTML = '';
     
     let html = '';
     newRows.forEach(row => {
         const relay = (row[8] || '').toUpperCase();
-        const relayClass = relay === 'TRUE' ? 'relay-true' : 'relay-false';
-        html += `<tr class="new-row">
-            <td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td>
-            <td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td>
-            <td class="${relayClass}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
+        html += `<tr class="new-row"><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td><td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td><td class="${relay==='TRUE'?'relay-true':'relay-false'}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
     });
-    
     tbody.insertAdjacentHTML('beforeend', html);
+    setTimeout(() => { tbody.querySelectorAll('.new-row').forEach(el => el.classList.remove('new-row')); }, 2000);
     
-    // Remove highlight animation after 2 seconds
-    setTimeout(() => {
-        const newRowsEls = tbody.querySelectorAll('.new-row');
-        newRowsEls.forEach(el => el.classList.remove('new-row'));
-    }, 2000);
+    const wrap = document.getElementById('tableWrap');
+    if (wrap) wrap.scrollTop = wrap.scrollHeight;
 }
 
-// ===== FULL RELOAD (for search/sort) =====
-function loadSheetData() {
-    knownTimestamps.clear();
+// ============================================
+// FULL RELOAD
+// ============================================
+function fullReload() {
+    knownTimestamps.clear(); lastKnownTimestamp = null; allSheetRows = [];
     document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading all data...</td></tr>';
-    
-    fetch(SHEETS_CSV + '&_=' + Date.now())
-        .then(r => r.text())
-        .then(csv => {
-            const rows = csv.split('\n').filter(l => l.trim());
-            if (rows.length < 2) return;
-            
-            allSheetRows = [];
-            for (let i = 1; i < rows.length; i++) {
-                const cols = rows[i].split(',').map(c => c.trim());
-                if (cols.length >= 7) {
-                    allSheetRows.push(cols);
-                    knownTimestamps.add(cols[0]);
-                }
-            }
-            
-            document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows';
-            document.getElementById('lastRefreshTime').textContent = 'Full reload: ' + new Date().toLocaleTimeString();
-            renderTable(allSheetRows);
-        })
-        .catch(e => console.error('Load error:', e));
+    checkForNewRows();
 }
 
+// ============================================
+// TABLE RENDERING
+// ============================================
 function renderTable(rows) {
     const tbody = document.getElementById('tableBody');
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>'; return; }
-    
     let html = '';
     rows.forEach(row => {
         const relay = (row[8] || '').toUpperCase();
-        const relayClass = relay === 'TRUE' ? 'relay-true' : 'relay-false';
-        html += `<tr>
-            <td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td>
-            <td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td>
-            <td class="${relayClass}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
+        html += `<tr><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td><td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td><td class="${relay==='TRUE'?'relay-true':'relay-false'}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
     });
     tbody.innerHTML = html;
 }
@@ -445,9 +515,23 @@ function sortTable(col) {
 }
 
 function filterTable() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = allSheetRows.filter(row => row.some(cell => (cell||'').toLowerCase().includes(q)));
+    const searchQ = document.getElementById('searchInput').value.toLowerCase();
+    const relayQ = document.getElementById('filterRelay').value;
+    const driverQ = document.getElementById('filterDriver').value;
+    
+    let filtered = allSheetRows;
+    if (searchQ) filtered = filtered.filter(row => row.some(cell => (cell||'').toLowerCase().includes(searchQ)));
+    if (relayQ) filtered = filtered.filter(row => (row[8]||'').toUpperCase() === relayQ);
+    if (driverQ) filtered = filtered.filter(row => (row[4]||'') === driverQ);
+    
     renderTable(filtered);
+}
+
+function updateDriverFilter() {
+    const drivers = new Set(allSheetRows.map(r => r[4]).filter(d => d && d !== 'None'));
+    const sel = document.getElementById('filterDriver');
+    sel.innerHTML = '<option value="">All Drivers</option>';
+    [...drivers].sort().forEach(d => { sel.innerHTML += `<option value="${d}">${d}</option>`; });
 }
 
 window.addEventListener('beforeunload', () => stopAutoRefresh());
