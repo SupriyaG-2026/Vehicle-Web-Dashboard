@@ -43,7 +43,7 @@
         .card h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         #map{height:500px;border-radius:8px}
         .trip-list{max-height:500px;overflow-y:auto}
-        .trip-item{background:rgba(255,255,255,.03);padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid var(--accent);cursor:pointer;transition:.2s}
+        .trip-item{background:rgba(255,255,255,.03);padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid var(--accent);cursor:pointer}
         .trip-item:hover{background:rgba(255,255,255,.06)}
         .trip-item.selected{border-left-color:var(--green);background:rgba(72,187,120,.12)}
         .trip-header{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
@@ -71,11 +71,8 @@
         .toggle-auto-btn.paused{background:rgba(252,129,129,.2);color:var(--red)}
         .search-box{background:#0f1123;border:1px solid var(--border);color:#fff;padding:7px 10px;border-radius:5px;width:180px;font-size:12px}
         .filter-bar select{background:#0f1123;border:1px solid var(--border);color:#fff;padding:6px 8px;border-radius:4px;font-size:11px}
-        .leaflet-popup-content{font-size:12px;line-height:1.5}
+        .leaflet-popup-content{font-size:12px;line-height:1.6}
         .leaflet-popup-content b{color:var(--accent)}
-        .point-popup{max-width:200px}
-        .point-popup .time{color:var(--accent);font-weight:bold}
-        .point-popup .coords{color:var(--muted);font-size:11px}
     </style>
 </head>
 <body>
@@ -118,9 +115,7 @@
             <div class="card">
                 <h2>📍 Live Map <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto">🗺️ Show All</button></h2>
                 <div id="map"></div>
-                <div style="font-size:11px;color:var(--muted);margin-top:8px">
-                    💡 Click on colored dots for timestamp | Zoom: Mouse scroll or +/- buttons
-                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:6px">💡 Click colored dots for timestamp | Scroll to zoom</div>
             </div>
             <div class="card">
                 <h2>📋 Trips <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto;font-size:11px">🗺️ All</button></h2>
@@ -141,9 +136,7 @@
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                     <input class="search-box" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()">
-                    <select id="filterRelay" onchange="filterTable()" class="filter-bar">
-                        <option value="">All Relay</option><option value="TRUE">ON Only</option><option value="FALSE">OFF Only</option>
-                    </select>
+                    <select id="filterRelay" onchange="filterTable()" class="filter-bar"><option value="">All Relay</option><option value="TRUE">ON Only</option><option value="FALSE">OFF Only</option></select>
                     <select id="filterDriver" onchange="filterTable()" class="filter-bar"><option value="">All Drivers</option></select>
                     <button class="toggle-auto-btn" id="toggleAutoBtn" onclick="toggleAutoRefresh()">⏸ Pause</button>
                     <button class="refresh-sheet-btn" onclick="fullReload()">🔄 Full Reload</button>
@@ -151,9 +144,8 @@
             </div>
             <div class="table-wrap" id="tableWrap">
                 <table class="data-table"><thead><tr>
-                    <th onclick="sortTable(0)">Timestamp ↕</th><th onclick="sortTable(1)">Accel X</th><th onclick="sortTable(2)">Accel Y</th>
-                    <th onclick="sortTable(3)">Accel Z</th><th onclick="sortTable(4)">Driver</th><th onclick="sortTable(5)">Latitude</th>
-                    <th onclick="sortTable(6)">Longitude</th><th onclick="sortTable(7)">Speed</th><th onclick="sortTable(8)">Relay</th><th onclick="sortTable(9)">Run Time</th>
+                    <th onclick="sortTable(0)">Timestamp</th><th>Accel X</th><th>Accel Y</th><th>Accel Z</th>
+                    <th>Driver</th><th>Lat</th><th>Lng</th><th>Spd</th><th>Relay</th><th>Run Time</th>
                 </tr></thead>
                 <tbody id="tableBody"><tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading data...</td></tr></tbody></table>
             </div>
@@ -162,7 +154,7 @@
 </div>
 
 <script>
-// ⚠️ CHANGE THIS TO YOUR APPS SCRIPT URL
+// ⚠️ CHANGE THIS!
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2ITFcT_Eq9IxLKqE704fgIjj1ccH7o0LRmwjpcF7Q7HscDReq9IeczZ_RQq82EqHyUQ/exec";
 
 const firebaseConfig = {
@@ -174,129 +166,64 @@ const firebaseConfig = {
     messagingSenderId: "890756908626",
     appId: "1:890756908626:web:8a1f205b40fe265134c18b"
 };
-
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(); const db = firebase.database();
+const auth=firebase.auth(),db=firebase.database();
 
-// ===== STATE =====
-let map, liveMarker, liveCircle, pathLines=[], tripMarkers=[], pointMarkers=[];
-let trips=[], selectedTripIndex=-1, liveRelayState=false, isFollowingLive=true;
-let allSheetRows=[], sortColumn=0, sortAsc=false, autoRefreshEnabled=true, autoRefreshInterval=null;
-let currentTab='map', knownTimestamps=new Set(), newRowCount=0, lastKnownTimestamp=null;
+let map,liveMarker,liveCircle,pathLines=[],tripMarkers=[],pointMarkers=[],trips=[],selectedTripIndex=-1,liveRelayState=false,isFollowingLive=true,allSheetRows=[],sortColumn=0,sortAsc=false,autoRefreshEnabled=true,autoRefreshInterval=null,currentTab='map',knownTimestamps=new Set(),newRowCount=0,lastKnownTimestamp=null;
 
 // ===== HELPERS =====
-function getRelayUpper(val){if(val===true||val==='true'||val==='TRUE')return'TRUE';if(val===false||val==='false'||val==='FALSE')return'FALSE';return String(val||'').toUpperCase();}
-function formatRuntime(val){if(!val||val==='')return'';if(typeof val==='string'&&val.includes('T')){try{const d=new Date(val);if(!isNaN(d.getTime()))return d.toLocaleTimeString();}catch(e){}}if(typeof val==='string'&&val.includes(':'))return val;return String(val);}
+function fmtDate(iso){if(!iso)return'';try{const d=new Date(iso);if(isNaN(d.getTime()))return iso;return d.toLocaleString();}catch(e){return iso;}}
+function fmtTime(iso){if(!iso)return'';try{const d=new Date(iso);if(isNaN(d.getTime()))return iso;return d.toLocaleTimeString();}catch(e){return iso;}}
+function getRelay(v){if(v===true||v==='true'||v==='TRUE')return'TRUE';if(v===false||v==='false'||v==='FALSE')return'FALSE';return String(v||'').toUpperCase();}
+function fmtRuntime(v){if(!v||v==='')return'';if(String(v).match(/^\d{2}:\d{2}:\d{2}$/))return v;try{const d=new Date(v);if(!isNaN(d.getTime()))return d.toLocaleTimeString();}catch(e){}return String(v);}
 
 // ===== AUTH =====
-auth.onAuthStateChanged(user=>{if(user){document.getElementById('loginScreen').style.display='none';document.getElementById('mainApp').style.display='block';document.getElementById('userEmail').textContent=user.email;initDashboard();}else{document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';stopAutoRefresh();}});
-function login(){const e=document.getElementById('emailInput').value.trim(),p=document.getElementById('passInput').value;const err=document.getElementById('errorMsg'),btn=document.getElementById('loginBtn');btn.disabled=true;btn.textContent='Signing in...';err.style.display='none';auth.signInWithEmailAndPassword(e,p).catch(er=>{err.textContent='❌ '+er.message;err.style.display='block';btn.disabled=false;btn.textContent='🔐 Sign In';});}
+auth.onAuthStateChanged(u=>{if(u){document.getElementById('loginScreen').style.display='none';document.getElementById('mainApp').style.display='block';document.getElementById('userEmail').textContent=u.email;initDashboard();}else{document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';stopAutoRefresh();}});
+function login(){const e=document.getElementById('emailInput').value.trim(),p=document.getElementById('passInput').value,er=document.getElementById('errorMsg'),b=document.getElementById('loginBtn');b.disabled=true;b.textContent='Signing in...';er.style.display='none';auth.signInWithEmailAndPassword(e,p).catch(x=>{er.textContent='❌ '+x.message;er.style.display='block';b.disabled=false;b.textContent='🔐 Sign In';});}
 document.getElementById('passInput').addEventListener('keypress',ev=>{if(ev.key==='Enter')login();});
 
 // ===== TABS =====
-function switchTab(tab){currentTab=tab;document.getElementById('tabMap').classList.toggle('active',tab==='map');document.getElementById('tabSheets').classList.toggle('active',tab==='sheets');document.getElementById('tabContentMap').style.display=tab==='map'?'block':'none';document.getElementById('tabContentSheets').style.display=tab==='sheets'?'block':'none';if(tab==='map'&&map)setTimeout(()=>map.invalidateSize(),200);if(tab==='sheets'){fullReload();startAutoRefresh();}else stopAutoRefresh();}
+function switchTab(t){currentTab=t;document.getElementById('tabMap').classList.toggle('active',t==='map');document.getElementById('tabSheets').classList.toggle('active',t==='sheets');document.getElementById('tabContentMap').style.display=t==='map'?'block':'none';document.getElementById('tabContentSheets').style.display=t==='sheets'?'block':'none';if(t==='map'&&map)setTimeout(()=>map.invalidateSize(),200);if(t==='sheets'){fullReload();startAutoRefresh();}else stopAutoRefresh();}
 function startAutoRefresh(){stopAutoRefresh();if(autoRefreshEnabled){autoRefreshInterval=setInterval(()=>checkForNewRows(),10000);updateAutoUI();}}
 function stopAutoRefresh(){if(autoRefreshInterval){clearInterval(autoRefreshInterval);autoRefreshInterval=null;}}
 function toggleAutoRefresh(){autoRefreshEnabled=!autoRefreshEnabled;if(currentTab==='sheets'){if(autoRefreshEnabled)startAutoRefresh();else stopAutoRefresh();}updateAutoUI();}
 function updateAutoUI(){const s=document.getElementById('autoStatus'),b=document.getElementById('toggleAutoBtn');if(autoRefreshEnabled){s.textContent='🔄 Live (10s)';b.textContent='⏸ Pause';b.className='toggle-auto-btn';}else{s.textContent='⏸ Paused';b.textContent='▶ Resume';b.className='toggle-auto-btn paused';}}
 
 // ===== INIT =====
-function initDashboard(){
-    if(!map){map=L.map('map',{zoomControl:true}).setView([12.9716,77.5946],18);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:22}).addTo(map);map.on('dragstart',()=>{isFollowingLive=false;});}
-    db.ref('.info/connected').on('value',snap=>{const on=snap.val();document.getElementById('dbDot').className='live-indicator '+(on?'live-on':'live-off');document.getElementById('dbText').textContent=on?'Online':'Offline';});
-    listenLive();loadTripsFromAPI();updateAutoUI();
-}
+function initDashboard(){if(!map){map=L.map('map',{zoomControl:true}).setView([12.9716,77.5946],18);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:22}).addTo(map);map.on('dragstart',()=>{isFollowingLive=false;});}db.ref('.info/connected').on('value',s=>{const o=s.val();document.getElementById('dbDot').className='live-indicator '+(o?'live-on':'live-off');document.getElementById('dbText').textContent=o?'Online':'Offline';});listenLive();loadTripsFromAPI();updateAutoUI();}
 
 // ===== LIVE FIREBASE =====
-function listenLive(){db.ref('device_profile/sensor_data').on('value',snap=>{const d=snap.val();if(!d)return;const lat=parseFloat(d.lat||0),lng=parseFloat(d.lng||0),relayOn=(d.relay_state===true||d.relay_state==='true'),speed=parseFloat(d.speed||0);document.getElementById('stEngine').innerHTML=relayOn?'<span class="green">🟢 ON</span>':'<span class="red">🔴 OFF</span>';document.getElementById('stSpeed').textContent=speed.toFixed(1)+' km/h';document.getElementById('stGPS').innerHTML=(lat&&lng)?'<span class="green">📍 Fixed</span>':'<span class="yellow">⏳ Searching</span>';document.getElementById('stDriver').textContent=d.driver||'None';if(lat&&lng)updateLiveMarker(lat,lng);if(relayOn!==liveRelayState){liveRelayState=relayOn;setTimeout(loadTripsFromAPI,3000);if(currentTab==='sheets')setTimeout(()=>checkForNewRows(),4000);}});}
+function listenLive(){db.ref('device_profile/sensor_data').on('value',s=>{const d=s.val();if(!d)return;const lat=parseFloat(d.lat||0),lng=parseFloat(d.lng||0),on=(d.relay_state===true||d.relay_state==='true'),sp=parseFloat(d.speed||0);document.getElementById('stEngine').innerHTML=on?'<span class="green">🟢 ON</span>':'<span class="red">🔴 OFF</span>';document.getElementById('stSpeed').textContent=sp.toFixed(1)+' km/h';document.getElementById('stGPS').innerHTML=(lat&&lng)?'<span class="green">📍 Fixed</span>':'<span class="yellow">⏳ Searching</span>';document.getElementById('stDriver').textContent=d.driver||'None';if(lat&&lng)updateLiveMarker(lat,lng);if(on!==liveRelayState){liveRelayState=on;setTimeout(loadTripsFromAPI,3000);if(currentTab==='sheets')setTimeout(()=>checkForNewRows(),4000);}});}
+function createBlueDot(){return L.divIcon({html:'<div style="position:relative;width:22px;height:22px;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div></div>',className:'',iconSize:[40,40],iconAnchor:[20,20]});}
+function updateLiveMarker(lat,lng){if(!liveMarker){liveMarker=L.marker([lat,lng],{icon:createBlueDot(),zIndexOffset:1000}).addTo(map).bindPopup('📍 Live Vehicle');}else liveMarker.setLatLng([lat,lng]);if(!liveCircle)liveCircle=L.circle([lat,lng],{radius:15,color:'#4285F4',fillColor:'#4285F4',fillOpacity:.1,weight:1.5,dashArray:'4,4'}).addTo(map);else liveCircle.setLatLng([lat,lng]);if(isFollowingLive&&selectedTripIndex<0)map.setView([lat,lng],18,{animate:true,duration:.5});}
 
-// ===== BLUE DOT =====
-function createBlueDotIcon(){return L.divIcon({html:`<div style="position:relative;width:22px;height:22px;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div></div>`,className:'',iconSize:[40,40],iconAnchor:[20,20]});}
-function updateLiveMarker(lat,lng){if(!liveMarker){liveMarker=L.marker([lat,lng],{icon:createBlueDotIcon(),zIndexOffset:1000}).addTo(map).bindPopup('📍 Live Vehicle');}else liveMarker.setLatLng([lat,lng]);if(!liveCircle)liveCircle=L.circle([lat,lng],{radius:15,color:'#4285F4',fillColor:'#4285F4',fillOpacity:.1,weight:1.5,dashArray:'4,4'}).addTo(map);else liveCircle.setLatLng([lat,lng]);if(isFollowingLive&&selectedTripIndex<0)map.setView([lat,lng],18,{animate:true,duration:.5});}
-
-// ===== TRIPS API =====
-function loadTripsFromAPI(){fetch(APPS_SCRIPT_URL+'?action=getTrips').then(r=>r.json()).then(data=>{if(data.trips){trips=data.trips.map(t=>({driver:t.driver,startTime:new Date(t.startTime),endTime:new Date(t.endTime),points:(t.points||[]).map(p=>({lat:p.lat,lng:p.lng,speed:p.speed||0,timestamp:p.timestamp||t.startTime})),runtime:t.runtime||'0:00:00',distance:t.distance||0}));document.getElementById('stTrips').textContent=trips.length;renderTripList();if(selectedTripIndex<0)renderAllTripsOnMap();}}).catch(e=>console.error(e));}
-
-function renderTripList(){const el=document.getElementById('tripList');if(!trips.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No trips yet</div>';return;}let h='';trips.forEach((t,i)=>{const d=t.distance||0;h+=`<div class="trip-item ${i===selectedTripIndex?'selected':''}" onclick="toggleTrip(${i})"><div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div><div class="trip-detail">📏 ${d.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div></div>`;});el.innerHTML=h;}
-
-function toggleTrip(i){if(selectedTripIndex===i){showAllTrips();}else{selectedTripIndex=i;isFollowingLive=false;renderTripList();zoomToTrip(i);}}
-
+// ===== TRIPS =====
+function loadTripsFromAPI(){fetch(APPS_SCRIPT_URL+'?action=getTrips').then(r=>r.json()).then(d=>{if(d.trips){trips=d.trips.map(t=>({driver:t.driver,startTime:new Date(t.startTime),endTime:new Date(t.endTime),points:(t.points||[]).map(p=>({lat:p.lat,lng:p.lng,speed:p.speed||0,ts:p.timestamp||t.startTime})),runtime:t.runtime||'00:00:00',distance:t.distance||0}));document.getElementById('stTrips').textContent=trips.length;renderTripList();if(selectedTripIndex<0)renderAllTripsOnMap();}}).catch(e=>console.error(e));}
+function renderTripList(){const el=document.getElementById('tripList');if(!trips.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No trips</div>';return;}let h='';trips.forEach((t,i)=>{h+=`<div class="trip-item ${i===selectedTripIndex?'selected':''}" onclick="toggleTrip(${i})"><div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div><div class="trip-detail">📏 ${(t.distance||0).toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div></div>`;});el.innerHTML=h;}
+function toggleTrip(i){if(selectedTripIndex===i)showAllTrips();else{selectedTripIndex=i;isFollowingLive=false;renderTripList();zoomToTrip(i);}}
 function showAllTrips(){selectedTripIndex=-1;isFollowingLive=true;renderTripList();renderAllTripsOnMap();if(liveMarker){const ll=liveMarker.getLatLng();map.setView([ll.lat,ll.lng],18,{animate:true});}}
 
-// ===== ZOOM TO TRIP WITH CLICKABLE POINTS =====
-function zoomToTrip(i){
-    clearAllMapOverlays();
-    const t=trips[i];
-    if(!t.points.length)return;
-    
-    // Draw the path line
-    const latlngs=t.points.map(p=>[p.lat,p.lng]);
-    const line=L.polyline(latlngs,{color:'#f6ad55',weight:5,opacity:0.9}).addTo(map);
-    pathLines.push(line);
-    
-    // Add START marker (green)
-    const startIcon=L.divIcon({html:'<div style="background:#48bb78;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)">S</div>',className:'',iconSize:[28,28],iconAnchor:[14,14]});
-    const startM=L.marker([t.points[0].lat,t.points[0].lng],{icon:startIcon}).addTo(map);
-    const startTime=t.points[0].timestamp?new Date(t.points[0].timestamp).toLocaleString():t.startTime.toLocaleString();
-    startM.bindPopup(`<div class="point-popup"><b>🏁 START</b><br><span class="time">${startTime}</span><br><span class="coords">${t.points[0].lat.toFixed(6)}, ${t.points[0].lng.toFixed(6)}</span><br>Speed: ${(t.points[0].speed||0).toFixed(1)} km/h</div>`);
-    tripMarkers.push(startM);
-    
-    // Add END marker (red)
-    const last=t.points[t.points.length-1];
-    const endIcon=L.divIcon({html:'<div style="background:#fc8181;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)">E</div>',className:'',iconSize:[28,28],iconAnchor:[14,14]});
-    const endM=L.marker([last.lat,last.lng],{icon:endIcon}).addTo(map);
-    const endTime=last.timestamp?new Date(last.timestamp).toLocaleString():t.endTime.toLocaleString();
-    endM.bindPopup(`<div class="point-popup"><b>🏁 END</b><br><span class="time">${endTime}</span><br><span class="coords">${last.lat.toFixed(6)}, ${last.lng.toFixed(6)}</span><br>Speed: ${(last.speed||0).toFixed(1)} km/h<br>Runtime: ${t.runtime}</div>`);
-    tripMarkers.push(endM);
-    
-    // Add clickable point markers along the path
-    const step=Math.max(1,Math.floor(t.points.length/20)); // Show max ~20 point markers
-    for(let j=0;j<t.points.length;j+=step){
-        const p=t.points[j];
-        const dotColor=j===0?'#48bb78':j>=t.points.length-step?'#fc8181':'#f6ad55';
-        const dotSize=j===0||j>=t.points.length-step?7:4;
-        const dot=L.circleMarker([p.lat,p.lng],{
-            radius:dotSize,fillColor:dotColor,color:'#fff',weight:1.5,fillOpacity:0.9
-        }).addTo(map);
-        
-        const ptTime=p.timestamp?new Date(p.timestamp).toLocaleString():'N/A';
-        dot.bindPopup(`<div class="point-popup"><b>📍 Point ${j+1}/${t.points.length}</b><br><span class="time">${ptTime}</span><br><span class="coords">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</span><br>Speed: ${(p.speed||0).toFixed(1)} km/h</div>`);
-        pointMarkers.push(dot);
-    }
-    
-    // Fit bounds with padding
-    const bounds=L.latLngBounds(latlngs);
-    map.fitBounds(bounds,{padding:[50,50],maxZoom:19});
-}
+function zoomToTrip(i){clearOverlays();const t=trips[i];if(!t.points.length)return;const ll=t.points.map(p=>[p.lat,p.lng]);pathLines.push(L.polyline(ll,{color:'#f6ad55',weight:5,opacity:.9}).addTo(map));
+const sIcon=L.divIcon({html:'<div style="background:#48bb78;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;border:2px solid #fff">S</div>',className:'',iconSize:[26,26],iconAnchor:[13,13]});
+const sm=L.marker([t.points[0].lat,t.points[0].lng],{icon:sIcon}).addTo(map);sm.bindPopup(`<b>🏁 START</b><br>${fmtDate(t.points[0].ts)}<br>${t.points[0].lat.toFixed(6)},${t.points[0].lng.toFixed(6)}<br>Speed:${(t.points[0].speed||0).toFixed(1)} km/h`);tripMarkers.push(sm);
+const last=t.points[t.points.length-1];
+const eIcon=L.divIcon({html:'<div style="background:#fc8181;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;border:2px solid #fff">E</div>',className:'',iconSize:[26,26],iconAnchor:[13,13]});
+const em=L.marker([last.lat,last.lng],{icon:eIcon}).addTo(map);em.bindPopup(`<b>🏁 END</b><br>${fmtDate(last.ts)}<br>${last.lat.toFixed(6)},${last.lng.toFixed(6)}<br>Speed:${(last.speed||0).toFixed(1)} km/h<br>Runtime:${t.runtime}`);tripMarkers.push(em);
+const step=Math.max(1,Math.floor(t.points.length/20));
+for(let j=0;j<t.points.length;j+=step){const p=t.points[j];const dot=L.circleMarker([p.lat,p.lng],{radius:j===0||j>=t.points.length-step?6:3,fillColor:j===0?'#48bb78':j>=t.points.length-step?'#fc8181':'#f6ad55',color:'#fff',weight:1.5,fillOpacity:.9}).addTo(map);dot.bindPopup(`<b>📍 Point ${j+1}/${t.points.length}</b><br>${fmtDate(p.ts)}<br>${p.lat.toFixed(6)},${p.lng.toFixed(6)}<br>Speed:${(p.speed||0).toFixed(1)} km/h`);pointMarkers.push(dot);}
+map.fitBounds(L.latLngBounds(ll),{padding:[50,50],maxZoom:19});}
 
-function renderAllTripsOnMap(){
-    clearAllMapOverlays();
-    const cols=['#48bb78','#63b3ed','#9f7aea','#00d4ff','#f6ad55','#fc8181'];
-    trips.forEach((t,i)=>{
-        if(t.points.length<2)return;
-        const latlngs=t.points.map(p=>[p.lat,p.lng]);
-        const line=L.polyline(latlngs,{color:cols[i%cols.length],weight:3,opacity:0.7}).addTo(map);
-        pathLines.push(line);
-        const startDot=L.circleMarker([t.points[0].lat,t.points[0].lng],{radius:7,fillColor:cols[i%6],color:'#fff',weight:2,fillOpacity:1}).addTo(map);
-        startDot.bindPopup(`<b>${t.driver}</b><br>Start: ${t.startTime.toLocaleString()}<br>Distance: ${(t.distance||0).toFixed(2)} km<br>Runtime: ${t.runtime}`);
-        tripMarkers.push(startDot);
-    });
-}
+function renderAllTripsOnMap(){clearOverlays();const cols=['#48bb78','#63b3ed','#9f7aea','#00d4ff','#f6ad55','#fc8181'];trips.forEach((t,i)=>{if(t.points.length<2)return;const ll=t.points.map(p=>[p.lat,p.lng]);pathLines.push(L.polyline(ll,{color:cols[i%6],weight:3,opacity:.7}).addTo(map));const sd=L.circleMarker([t.points[0].lat,t.points[0].lng],{radius:7,fillColor:cols[i%6],color:'#fff',weight:2,fillOpacity:1}).addTo(map);sd.bindPopup(`<b>${t.driver}</b><br>${t.startTime.toLocaleString()}<br>${(t.distance||0).toFixed(2)} km<br>${t.runtime}`);tripMarkers.push(sd);});}
+function clearOverlays(){pathLines.forEach(l=>map.removeLayer(l));pathLines=[];tripMarkers.forEach(m=>map.removeLayer(m));tripMarkers=[];pointMarkers.forEach(m=>map.removeLayer(m));pointMarkers=[];}
 
-function clearAllMapOverlays(){
-    pathLines.forEach(l=>map.removeLayer(l));pathLines=[];
-    tripMarkers.forEach(m=>map.removeLayer(m));tripMarkers=[];
-    pointMarkers.forEach(m=>map.removeLayer(m));pointMarkers=[];
-}
-
-// ===== LIVE LOG =====
-function checkForNewRows(){const url=lastKnownTimestamp?APPS_SCRIPT_URL+'?action=getNew&last='+encodeURIComponent(lastKnownTimestamp):APPS_SCRIPT_URL+'?action=getAll';fetch(url).then(r=>r.json()).then(data=>{if(data.error){console.error(data.error);return;}const rows=(data.rows||[]).map(r=>[r.timestamp||'',r.accel_x||'',r.accel_y||'',r.accel_z||'',r.driver||'',r.latitude||r.lat||'',r.longitude||r.lng||'',r.speed||'',String(r.relay_state||''),formatRuntime(r.run_time)||'']);if(lastKnownTimestamp===null){allSheetRows=rows;knownTimestamps=new Set(rows.map(r=>r[0]));updateDriverFilter();renderTable(allSheetRows);document.getElementById('sheetRowCount').textContent=allSheetRows.length+' rows';}else{const trulyNew=rows.filter(r=>!knownTimestamps.has(r[0]));if(trulyNew.length>0){trulyNew.forEach(r=>knownTimestamps.add(r[0]));allSheetRows.push(...trulyNew);appendNewRows(trulyNew);updateDriverFilter();newRowCount+=trulyNew.length;const badge=document.getElementById('newRowsBadge');badge.textContent='+'+newRowCount;badge.style.display='inline-block';setTimeout(()=>{badge.style.display='none';newRowCount=0;},3000);document.getElementById('sheetRowCount').textContent=allSheetRows.length+' rows';}}if(data.latestTimestamp)lastKnownTimestamp=data.latestTimestamp;else if(rows.length>0)lastKnownTimestamp=rows[rows.length-1][0];document.getElementById('lastRefreshTime').textContent='Checked: '+new Date().toLocaleTimeString();}).catch(e=>console.error(e));}
-function appendNewRows(nr){const tb=document.getElementById('tableBody');if(tb.children.length===1&&tb.children[0].cells.length===1)tb.innerHTML='';let h='';nr.forEach(r=>{const rl=getRelayUpper(r[8]);h+=`<tr class="new-row"><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[5]||''}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td class="${rl==='TRUE'?'relay-true':'relay-false'}">${rl}</td><td>${r[9]||''}</td></tr>`;});tb.insertAdjacentHTML('beforeend',h);setTimeout(()=>{tb.querySelectorAll('.new-row').forEach(el=>el.classList.remove('new-row'));},2000);const wrap=document.getElementById('tableWrap');if(wrap)wrap.scrollTop=wrap.scrollHeight;}
+// ===== SHEETS =====
+function checkForNewRows(){const url=lastKnownTimestamp?APPS_SCRIPT_URL+'?action=getNew&last='+encodeURIComponent(lastKnownTimestamp):APPS_SCRIPT_URL+'?action=getAll';fetch(url).then(r=>r.json()).then(d=>{if(d.error){console.error(d.error);return;}const rows=(d.rows||[]).map(r=>[fmtDate(r.timestamp),r.accel_x||'',r.accel_y||'',r.accel_z||'',r.driver||'',(r.latitude||r.lat||0).toFixed?.(6)||'',(r.longitude||r.lng||0).toFixed?.(6)||'',(r.speed||0).toFixed?.(1)||'',String(r.relay_state||''),fmtRuntime(r.run_time)]);if(lastKnownTimestamp===null){allSheetRows=rows;knownTimestamps=new Set(rows.map(r=>r[0]));updateDriverFilter();renderTable(allSheetRows);document.getElementById('sheetRowCount').textContent=allSheetRows.length+' rows';}else{const nw=rows.filter(r=>!knownTimestamps.has(r[0]));if(nw.length>0){nw.forEach(r=>knownTimestamps.add(r[0]));allSheetRows.push(...nw);appendNewRows(nw);updateDriverFilter();newRowCount+=nw.length;const b=document.getElementById('newRowsBadge');b.textContent='+'+newRowCount;b.style.display='inline-block';setTimeout(()=>{b.style.display='none';newRowCount=0;},3000);document.getElementById('sheetRowCount').textContent=allSheetRows.length+' rows';}}if(d.latestTimestamp)lastKnownTimestamp=d.latestTimestamp;else if(rows.length)lastKnownTimestamp=rows[rows.length-1][0];document.getElementById('lastRefreshTime').textContent='Checked: '+new Date().toLocaleTimeString();}).catch(e=>console.error(e));}
+function appendNewRows(nr){const tb=document.getElementById('tableBody');if(tb.children.length===1&&tb.children[0].cells.length===1)tb.innerHTML='';let h='';nr.forEach(r=>{const rl=getRelay(r[8]);h+=`<tr class="new-row"><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[5]||''}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td class="${rl==='TRUE'?'relay-true':'relay-false'}">${rl}</td><td>${r[9]||''}</td></tr>`;});tb.insertAdjacentHTML('beforeend',h);setTimeout(()=>{tb.querySelectorAll('.new-row').forEach(el=>el.classList.remove('new-row'));},2000);const wrap=document.getElementById('tableWrap');if(wrap)wrap.scrollTop=wrap.scrollHeight;}
 function fullReload(){knownTimestamps.clear();lastKnownTimestamp=null;allSheetRows=[];document.getElementById('tableBody').innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading all data...</td></tr>';checkForNewRows();}
-function renderTable(rows){const tb=document.getElementById('tableBody');if(!rows.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>';return;}let h='';rows.forEach(r=>{const rl=getRelayUpper(r[8]);h+=`<tr><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[5]||''}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td class="${rl==='TRUE'?'relay-true':'relay-false'}">${rl}</td><td>${r[9]||''}</td></tr>`;});tb.innerHTML=h;}
-function sortTable(col){if(sortColumn===col)sortAsc=!sortAsc;else{sortColumn=col;sortAsc=true;}const sorted=[...allSheetRows].sort((a,b)=>{let va=a[col]||'',vb=b[col]||'';const na=parseFloat(va),nb=parseFloat(vb);if(!isNaN(na)&&!isNaN(nb))return sortAsc?na-nb:nb-na;return sortAsc?va.localeCompare(vb):vb.localeCompare(va);});renderTable(sorted);}
-function filterTable(){const sq=document.getElementById('searchInput').value.toLowerCase(),rq=document.getElementById('filterRelay').value,dq=document.getElementById('filterDriver').value;let f=allSheetRows;if(sq)f=f.filter(r=>r.some(c=>(c||'').toLowerCase().includes(sq)));if(rq)f=f.filter(r=>getRelayUpper(r[8])===rq);if(dq)f=f.filter(r=>(r[4]||'')===dq);renderTable(f);}
-function updateDriverFilter(){const drivers=new Set(allSheetRows.map(r=>r[4]).filter(d=>d&&d!=='None'));const sel=document.getElementById('filterDriver');sel.innerHTML='<option value="">All Drivers</option>';[...drivers].sort().forEach(d=>{sel.innerHTML+=`<option value="${d}">${d}</option>`;});}
+function renderTable(rs){const tb=document.getElementById('tableBody');if(!rs.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>';return;}let h='';rs.forEach(r=>{const rl=getRelay(r[8]);h+=`<tr><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[5]||''}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td class="${rl==='TRUE'?'relay-true':'relay-false'}">${rl}</td><td>${r[9]||''}</td></tr>`;});tb.innerHTML=h;}
+function sortTable(c){if(sortColumn===c)sortAsc=!sortAsc;else{sortColumn=c;sortAsc=true;}const s=[...allSheetRows].sort((a,b)=>{let va=a[c]||'',vb=b[c]||'';const na=parseFloat(va),nb=parseFloat(vb);if(!isNaN(na)&&!isNaN(nb))return sortAsc?na-nb:nb-na;return sortAsc?va.localeCompare(vb):vb.localeCompare(va);});renderTable(s);}
+function filterTable(){const sq=document.getElementById('searchInput').value.toLowerCase(),rq=document.getElementById('filterRelay').value,dq=document.getElementById('filterDriver').value;let f=allSheetRows;if(sq)f=f.filter(r=>r.some(c=>(c||'').toLowerCase().includes(sq)));if(rq)f=f.filter(r=>getRelay(r[8])===rq);if(dq)f=f.filter(r=>(r[4]||'')===dq);renderTable(f);}
+function updateDriverFilter(){const dr=new Set(allSheetRows.map(r=>r[4]).filter(d=>d&&d!=='None'));const sel=document.getElementById('filterDriver');sel.innerHTML='<option value="">All Drivers</option>';[...dr].sort().forEach(d=>{sel.innerHTML+=`<option value="${d}">${d}</option>`;});}
 window.addEventListener('beforeunload',()=>stopAutoRefresh());
 </script>
 </body>
