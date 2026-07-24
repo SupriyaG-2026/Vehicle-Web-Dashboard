@@ -77,9 +77,16 @@
         .data-table .relay-true{color:var(--green);font-weight:600}
         .data-table .relay-false{color:var(--red)}
         .table-wrap{max-height:500px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
-        .sheet-info{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+        .sheet-info{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center}
+        .auto-refresh{font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px}
+        .auto-refresh.off{color:var(--muted)}
         .refresh-sheet-btn{background:rgba(99,179,237,.2);color:#63b3ed;border:1px solid rgba(99,179,237,.2);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px}
+        .toggle-auto-btn{background:rgba(72,187,120,.2);color:var(--green);border:1px solid rgba(72,187,120,.3);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px}
+        .toggle-auto-btn.paused{background:rgba(252,129,129,.2);color:var(--red);border-color:rgba(252,129,129,.3)}
         .search-box{background:#0f1123;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;width:200px;font-size:13px}
+        .last-refresh{font-size:10px;color:var(--muted)}
+        .highlight-new{animation: highlightRow 2s ease-out}
+        @keyframes highlightRow{0%{background:rgba(0,212,255,.2)}100%{background:transparent}}
     </style>
 </head>
 <body>
@@ -143,10 +150,15 @@
         <div class="card">
             <h2>📊 Google Sheets Log</h2>
             <div class="sheet-info">
-                <span id="sheetRowCount">0 rows loaded</span>
-                <div style="display:flex;gap:8px;align-items:center">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    <span id="sheetRowCount">0 rows loaded</span>
+                    <span class="auto-refresh" id="autoRefreshStatus">🔄 Auto-refresh: ON (30s)</span>
+                    <span class="last-refresh" id="lastRefreshTime"></span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                     <input class="search-box" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()">
-                    <button class="refresh-sheet-btn" onclick="loadSheetData()">🔄 Refresh</button>
+                    <button class="toggle-auto-btn" id="toggleAutoBtn" onclick="toggleAutoRefresh()">⏸ Pause Auto</button>
+                    <button class="refresh-sheet-btn" onclick="loadSheetData()">🔄 Refresh Now</button>
                 </div>
             </div>
             <div class="table-wrap">
@@ -200,6 +212,10 @@ let isFollowingLive = true;
 let allSheetRows = [];
 let sortColumn = 0;
 let sortAsc = false;
+let autoRefreshEnabled = true;
+let autoRefreshInterval = null;
+let sheetRowCount = 0;  // Track row count for change detection
+let currentTab = 'map';
 
 // ===== AUTH =====
 auth.onAuthStateChanged(user => {
@@ -211,6 +227,7 @@ auth.onAuthStateChanged(user => {
     } else {
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
+        stopAutoRefresh();
     }
 });
 
@@ -227,12 +244,61 @@ document.getElementById('passInput').addEventListener('keypress', e => { if (e.k
 
 // ===== TABS =====
 function switchTab(tab) {
+    currentTab = tab;
     document.getElementById('tabMap').classList.toggle('active', tab === 'map');
     document.getElementById('tabSheets').classList.toggle('active', tab === 'sheets');
     document.getElementById('tabContentMap').style.display = tab === 'map' ? 'block' : 'none';
     document.getElementById('tabContentSheets').style.display = tab === 'sheets' ? 'block' : 'none';
     if (tab === 'map' && map) setTimeout(() => map.invalidateSize(), 200);
-    if (tab === 'sheets') loadSheetData();
+    if (tab === 'sheets') {
+        loadSheetData();
+        startAutoRefresh();
+    } else {
+        stopAutoRefresh();
+    }
+}
+
+// ===== AUTO REFRESH =====
+function startAutoRefresh() {
+    stopAutoRefresh();
+    if (autoRefreshEnabled) {
+        autoRefreshInterval = setInterval(() => {
+            loadSheetData(true);  // true = silent refresh (keep scroll position)
+        }, 30000);  // 30 seconds
+        updateAutoRefreshUI();
+    }
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+function toggleAutoRefresh() {
+    autoRefreshEnabled = !autoRefreshEnabled;
+    if (currentTab === 'sheets') {
+        if (autoRefreshEnabled) startAutoRefresh();
+        else stopAutoRefresh();
+    }
+    updateAutoRefreshUI();
+}
+
+function updateAutoRefreshUI() {
+    const statusEl = document.getElementById('autoRefreshStatus');
+    const btnEl = document.getElementById('toggleAutoBtn');
+    if (autoRefreshEnabled) {
+        statusEl.textContent = '🔄 Auto-refresh: ON (30s)';
+        statusEl.className = 'auto-refresh';
+        btnEl.textContent = '⏸ Pause Auto';
+        btnEl.className = 'toggle-auto-btn';
+    } else {
+        statusEl.textContent = '⏸ Auto-refresh: OFF';
+        statusEl.className = 'auto-refresh off';
+        btnEl.textContent = '▶ Resume Auto';
+        btnEl.className = 'toggle-auto-btn paused';
+    }
 }
 
 // ===== INIT =====
@@ -249,6 +315,7 @@ function initDashboard() {
     });
     listenLive();
     loadSheetTrips();
+    updateAutoRefreshUI();
 }
 
 // ===== LIVE DATA =====
@@ -264,7 +331,12 @@ function listenLive() {
         document.getElementById('stGPS').innerHTML = (lat && lng) ? '<span class="green">📍 Fixed</span>' : '<span class="yellow">⏳ Searching</span>';
         document.getElementById('stDriver').textContent = d.driver || 'None';
         if (lat && lng) updateLiveMarker(lat, lng);
-        if (relayOn !== liveRelayState) { liveRelayState = relayOn; if (relayOn) setTimeout(loadSheetTrips, 2000); }
+        if (relayOn !== liveRelayState) {
+            liveRelayState = relayOn;
+            if (relayOn) setTimeout(loadSheetTrips, 2000);
+            // Also refresh sheets tab when relay changes
+            if (currentTab === 'sheets') setTimeout(() => loadSheetData(true), 3000);
+        }
     });
 }
 
@@ -377,34 +449,72 @@ function clearTripLines() { pathLines.forEach(l => map.removeLayer(l)); pathLine
 function calcTripDistance(t) { let d = 0; for (let i = 1; i < t.points.length; i++) { const r = 6371; const dLat = (t.points[i].lat-t.points[i-1].lat)*Math.PI/180; const dLng = (t.points[i].lng-t.points[i-1].lng)*Math.PI/180; const a = Math.sin(dLat/2)**2 + Math.cos(t.points[i-1].lat*Math.PI/180)*Math.cos(t.points[i].lat*Math.PI/180)*Math.sin(dLng/2)**2; d += r*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); } return d; }
 
 // ===== SHEETS TABLE =====
-function loadSheetData() {
-    fetch(SHEETS_CSV).then(r => r.text()).then(csv => {
-        const rows = csv.split('\n').filter(l => l.trim());
-        if (rows.length < 2) return;
-        const headers = rows[0].split(',').map(h => h.trim());
-        allSheetRows = [];
-        for (let i = 1; i < rows.length; i++) {
-            const cols = rows[i].split(',').map(c => c.trim());
-            if (cols.length >= 7) allSheetRows.push(cols);
-        }
-        document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows loaded';
-        renderTable(allSheetRows);
-    }).catch(e => console.error('Sheet load error:', e));
+function loadSheetData(silent = false) {
+    if (!silent) {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Refreshing data...</td></tr>';
+    }
+    
+    // Add cache-busting parameter to avoid Google's cache
+    const cacheBuster = '&_cb=' + Date.now();
+    
+    fetch(SHEETS_CSV + cacheBuster)
+        .then(r => r.text())
+        .then(csv => {
+            const rows = csv.split('\n').filter(l => l.trim());
+            if (rows.length < 2) return;
+            const headers = rows[0].split(',').map(h => h.trim());
+            
+            const newRows = [];
+            for (let i = 1; i < rows.length; i++) {
+                const cols = rows[i].split(',').map(c => c.trim());
+                if (cols.length >= 7) newRows.push(cols);
+            }
+            
+            // Detect if new rows were added
+            const isNewData = (newRows.length !== sheetRowCount);
+            sheetRowCount = newRows.length;
+            allSheetRows = newRows;
+            
+            document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows loaded';
+            document.getElementById('lastRefreshTime').textContent = 'Last refresh: ' + new Date().toLocaleTimeString();
+            
+            renderTable(allSheetRows, isNewData && !silent);
+        })
+        .catch(e => {
+            console.error('Sheet load error:', e);
+            if (!silent) {
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--red);padding:30px">Failed to load data. Check console.</td></tr>';
+            }
+        });
 }
 
-function renderTable(rows) {
+function renderTable(rows, highlightNew = false) {
     const tbody = document.getElementById('tableBody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>'; return; }
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>';
+        return;
+    }
+    
+    // Preserve scroll position
+    const tableWrap = document.querySelector('.table-wrap');
+    const scrollTop = tableWrap ? tableWrap.scrollTop : 0;
+    
     let html = '';
-    rows.forEach(row => {
+    rows.forEach((row, index) => {
         const relay = (row[8] || '').toUpperCase();
         const relayClass = relay === 'TRUE' ? 'relay-true' : 'relay-false';
-        html += `<tr>
+        const highlightClass = (highlightNew && index >= rows.length - 5) ? ' highlight-new' : '';
+        html += `<tr class="${highlightClass}">
             <td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td>
             <td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td>
             <td class="${relayClass}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
     });
     tbody.innerHTML = html;
+    
+    // Restore scroll position
+    if (tableWrap && !highlightNew) {
+        tableWrap.scrollTop = scrollTop;
+    }
 }
 
 function sortTable(col) {
@@ -423,6 +533,11 @@ function filterTable() {
     const filtered = allSheetRows.filter(row => row.some(cell => (cell||'').toLowerCase().includes(q)));
     renderTable(filtered);
 }
+
+// ===== CLEANUP =====
+window.addEventListener('beforeunload', () => {
+    stopAutoRefresh();
+});
 </script>
 </body>
 </html>
