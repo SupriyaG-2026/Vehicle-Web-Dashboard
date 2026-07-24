@@ -65,28 +65,28 @@
         .live-off{background:var(--red)}
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.6)}}
         @keyframes bluePulse{0%{transform:translate(-50%,-50%) scale(0.5);opacity:1}100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
+        @keyframes newRow{0%{background:rgba(0,212,255,.3)}100%{background:transparent}}
         .map-legend{font-size:11px;color:var(--muted);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap}
         .legend-item{display:flex;align-items:center;gap:4px}
         .legend-dot{width:12px;height:12px;border-radius:50%}
         .legend-dot.live{background:#4285F4;box-shadow:0 0 8px #4285F4}
-        .data-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
-        .data-table th{background:rgba(0,212,255,.1);color:var(--accent);padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;position:sticky;top:0;z-index:2}
+        .data-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+        .data-table th{background:rgba(0,212,255,.1);color:var(--accent);padding:10px 6px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;position:sticky;top:0;z-index:2;white-space:nowrap}
         .data-table th:hover{background:rgba(0,212,255,.2)}
-        .data-table td{padding:8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
-        .data-table tr:hover td{background:rgba(255,255,255,.03)}
+        .data-table td{padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text);white-space:nowrap;font-size:11px}
+        .data-table tr.new-row td{animation:newRow 2s ease-out}
         .data-table .relay-true{color:var(--green);font-weight:600}
         .data-table .relay-false{color:var(--red)}
-        .table-wrap{max-height:500px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
-        .sheet-info{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center}
+        .table-wrap{max-height:450px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+        .sheet-info{font-size:12px;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center}
         .auto-refresh{font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px}
         .auto-refresh.off{color:var(--muted)}
+        .new-badge{background:var(--green);color:#000;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:6px;animation:pulse 1.5s infinite}
         .refresh-sheet-btn{background:rgba(99,179,237,.2);color:#63b3ed;border:1px solid rgba(99,179,237,.2);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px}
         .toggle-auto-btn{background:rgba(72,187,120,.2);color:var(--green);border:1px solid rgba(72,187,120,.3);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px}
         .toggle-auto-btn.paused{background:rgba(252,129,129,.2);color:var(--red);border-color:rgba(252,129,129,.3)}
-        .search-box{background:#0f1123;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;width:200px;font-size:13px}
+        .search-box{background:#0f1123;border:1px solid var(--border);color:#fff;padding:7px 10px;border-radius:5px;width:180px;font-size:12px}
         .last-refresh{font-size:10px;color:var(--muted)}
-        .highlight-new{animation: highlightRow 2s ease-out}
-        @keyframes highlightRow{0%{background:rgba(0,212,255,.2)}100%{background:transparent}}
     </style>
 </head>
 <body>
@@ -112,15 +112,13 @@
         </div>
     </nav>
 
-    <!-- TABS -->
     <div class="container">
         <div class="tabs">
             <button class="tab active" onclick="switchTab('map')" id="tabMap">🗺️ Live Map & Trips</button>
-            <button class="tab" onclick="switchTab('sheets')" id="tabSheets">📊 Sheets Log</button>
+            <button class="tab" onclick="switchTab('sheets')" id="tabSheets">📊 Live Log</button>
         </div>
     </div>
 
-    <!-- MAP TAB -->
     <div id="tabContentMap" class="container">
         <div class="stat-row">
             <div class="stat"><h3>Engine</h3><div class="val" id="stEngine">--</div></div>
@@ -133,10 +131,6 @@
             <div class="card">
                 <h2>📍 Live Map <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto">🗺️ Show All</button></h2>
                 <div id="map"></div>
-                <div class="map-legend">
-                    <div class="legend-item"><div class="legend-dot live"></div> Live</div>
-                    <div class="legend-item"><div style="width:12px;height:3px;background:#f6ad55;border-radius:2px"></div> Selected</div>
-                </div>
             </div>
             <div class="card">
                 <h2>📋 Trips <button class="show-all-btn" onclick="showAllTrips()" style="margin-left:auto;font-size:11px">🗺️ All</button></h2>
@@ -145,23 +139,23 @@
         </div>
     </div>
 
-    <!-- SHEETS TAB -->
     <div id="tabContentSheets" class="container" style="display:none">
         <div class="card">
-            <h2>📊 Google Sheets Log</h2>
+            <h2>📊 Live Data Log <span style="font-size:11px;color:var(--muted);font-weight:normal">(new rows appear automatically)</span></h2>
             <div class="sheet-info">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                    <span id="sheetRowCount">0 rows loaded</span>
-                    <span class="auto-refresh" id="autoRefreshStatus">🔄 Auto-refresh: ON (30s)</span>
+                    <span id="sheetRowCount">0 rows</span>
+                    <span id="newRowsBadge" style="display:none" class="new-badge">NEW</span>
+                    <span class="auto-refresh" id="autoRefreshStatus">🔄 Live (10s)</span>
                     <span class="last-refresh" id="lastRefreshTime"></span>
                 </div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                     <input class="search-box" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()">
-                    <button class="toggle-auto-btn" id="toggleAutoBtn" onclick="toggleAutoRefresh()">⏸ Pause Auto</button>
-                    <button class="refresh-sheet-btn" onclick="loadSheetData()">🔄 Refresh Now</button>
+                    <button class="toggle-auto-btn" id="toggleAutoBtn" onclick="toggleAutoRefresh()">⏸ Pause</button>
+                    <button class="refresh-sheet-btn" onclick="loadSheetData()">🔄 Full Reload</button>
                 </div>
             </div>
-            <div class="table-wrap">
+            <div class="table-wrap" id="tableWrap">
                 <table class="data-table" id="dataTable">
                     <thead>
                         <tr>
@@ -178,7 +172,7 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading sheet data...</td></tr>
+                        <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -205,17 +199,11 @@ const db = firebase.database();
 
 // ===== STATE =====
 let map, liveMarker, liveCircle, pathLines = [], tripMarkers = [];
-let trips = [];
-let selectedTripIndex = -1;
-let liveRelayState = false;
-let isFollowingLive = true;
-let allSheetRows = [];
-let sortColumn = 0;
-let sortAsc = false;
-let autoRefreshEnabled = true;
-let autoRefreshInterval = null;
-let sheetRowCount = 0;  // Track row count for change detection
-let currentTab = 'map';
+let trips = [], selectedTripIndex = -1, liveRelayState = false, isFollowingLive = true;
+let allSheetRows = [], sortColumn = 0, sortAsc = false;
+let autoRefreshEnabled = true, autoRefreshInterval = null, currentTab = 'map';
+let knownTimestamps = new Set();  // Track known rows to detect new ones
+let newRowCount = 0;
 
 // ===== AUTH =====
 auth.onAuthStateChanged(user => {
@@ -250,55 +238,29 @@ function switchTab(tab) {
     document.getElementById('tabContentMap').style.display = tab === 'map' ? 'block' : 'none';
     document.getElementById('tabContentSheets').style.display = tab === 'sheets' ? 'block' : 'none';
     if (tab === 'map' && map) setTimeout(() => map.invalidateSize(), 200);
-    if (tab === 'sheets') {
-        loadSheetData();
-        startAutoRefresh();
-    } else {
-        stopAutoRefresh();
-    }
+    if (tab === 'sheets') { loadSheetData(); startAutoRefresh(); }
+    else stopAutoRefresh();
 }
 
 // ===== AUTO REFRESH =====
 function startAutoRefresh() {
     stopAutoRefresh();
     if (autoRefreshEnabled) {
-        autoRefreshInterval = setInterval(() => {
-            loadSheetData(true);  // true = silent refresh (keep scroll position)
-        }, 30000);  // 30 seconds
+        autoRefreshInterval = setInterval(() => checkForNewRows(), 10000);  // 10 seconds
         updateAutoRefreshUI();
     }
 }
-
-function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-    }
-}
-
+function stopAutoRefresh() { if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; } }
 function toggleAutoRefresh() {
     autoRefreshEnabled = !autoRefreshEnabled;
-    if (currentTab === 'sheets') {
-        if (autoRefreshEnabled) startAutoRefresh();
-        else stopAutoRefresh();
-    }
+    if (currentTab === 'sheets') { if (autoRefreshEnabled) startAutoRefresh(); else stopAutoRefresh(); }
     updateAutoRefreshUI();
 }
-
 function updateAutoRefreshUI() {
-    const statusEl = document.getElementById('autoRefreshStatus');
-    const btnEl = document.getElementById('toggleAutoBtn');
-    if (autoRefreshEnabled) {
-        statusEl.textContent = '🔄 Auto-refresh: ON (30s)';
-        statusEl.className = 'auto-refresh';
-        btnEl.textContent = '⏸ Pause Auto';
-        btnEl.className = 'toggle-auto-btn';
-    } else {
-        statusEl.textContent = '⏸ Auto-refresh: OFF';
-        statusEl.className = 'auto-refresh off';
-        btnEl.textContent = '▶ Resume Auto';
-        btnEl.className = 'toggle-auto-btn paused';
-    }
+    const s = document.getElementById('autoRefreshStatus');
+    const b = document.getElementById('toggleAutoBtn');
+    if (autoRefreshEnabled) { s.textContent = '🔄 Live (10s)'; s.className = 'auto-refresh'; b.textContent = '⏸ Pause'; b.className = 'toggle-auto-btn'; }
+    else { s.textContent = '⏸ Paused'; s.className = 'auto-refresh off'; b.textContent = '▶ Resume'; b.className = 'toggle-auto-btn paused'; }
 }
 
 // ===== INIT =====
@@ -313,208 +275,162 @@ function initDashboard() {
         document.getElementById('dbDot').className = 'live-indicator ' + (on ? 'live-on' : 'live-off');
         document.getElementById('dbText').textContent = on ? 'Online' : 'Offline';
     });
-    listenLive();
-    loadSheetTrips();
-    updateAutoRefreshUI();
+    listenLive(); loadSheetTrips(); updateAutoRefreshUI();
 }
 
 // ===== LIVE DATA =====
 function listenLive() {
     db.ref('device_profile/sensor_data').on('value', snap => {
-        const d = snap.val();
-        if (!d) return;
-        const lat = parseFloat(d.lat || 0), lng = parseFloat(d.lng || 0);
-        const relayOn = (d.relay_state === true || d.relay_state === 'true');
-        const speed = parseFloat(d.speed || 0);
-        document.getElementById('stEngine').innerHTML = relayOn ? '<span class="green">🟢 ON</span>' : '<span class="red">🔴 OFF</span>';
-        document.getElementById('stSpeed').textContent = speed.toFixed(1) + ' km/h';
-        document.getElementById('stGPS').innerHTML = (lat && lng) ? '<span class="green">📍 Fixed</span>' : '<span class="yellow">⏳ Searching</span>';
-        document.getElementById('stDriver').textContent = d.driver || 'None';
-        if (lat && lng) updateLiveMarker(lat, lng);
-        if (relayOn !== liveRelayState) {
-            liveRelayState = relayOn;
-            if (relayOn) setTimeout(loadSheetTrips, 2000);
-            // Also refresh sheets tab when relay changes
-            if (currentTab === 'sheets') setTimeout(() => loadSheetData(true), 3000);
-        }
+        const d = snap.val(); if (!d) return;
+        const lat = parseFloat(d.lat||0), lng = parseFloat(d.lng||0);
+        const relayOn = (d.relay_state===true||d.relay_state==='true');
+        document.getElementById('stEngine').innerHTML = relayOn?'<span class="green">🟢 ON</span>':'<span class="red">🔴 OFF</span>';
+        document.getElementById('stSpeed').textContent = (parseFloat(d.speed||0)).toFixed(1)+' km/h';
+        document.getElementById('stGPS').innerHTML = (lat&&lng)?'<span class="green">📍 Fixed</span>':'<span class="yellow">⏳ Searching</span>';
+        document.getElementById('stDriver').textContent = d.driver||'None';
+        if(lat&&lng)updateLiveMarker(lat,lng);
+        if(relayOn!==liveRelayState){liveRelayState=relayOn;if(relayOn)setTimeout(loadSheetTrips,2000);if(currentTab==='sheets')setTimeout(()=>checkForNewRows(),3000);}
     });
 }
 
-// ===== BLUE DOT =====
-function createBlueDotIcon() {
-    return L.divIcon({
-        html: `<div style="position:relative;width:22px;height:22px;">
-            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>
-            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div></div>`,
-        className: '', iconSize: [40, 40], iconAnchor: [20, 20]
-    });
-}
-function updateLiveMarker(lat, lng) {
-    if (!liveMarker) { liveMarker = L.marker([lat, lng], {icon: createBlueDotIcon(), zIndexOffset: 1000}).addTo(map).bindPopup('📍 Live'); }
-    else liveMarker.setLatLng([lat, lng]);
-    if (!liveCircle) liveCircle = L.circle([lat, lng], {radius: 15, color: '#4285F4', fillColor: '#4285F4', fillOpacity: 0.1, weight: 1.5, dashArray: '4,4'}).addTo(map);
-    else liveCircle.setLatLng([lat, lng]);
-    if (isFollowingLive && selectedTripIndex < 0) map.panTo([lat, lng], {animate: true, duration: 0.5});
-}
+function createBlueDotIcon(){return L.divIcon({html:`<div style="position:relative;width:22px;height:22px;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;background:#4285F4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(66,133,244,.2);border-radius:50%;animation:bluePulse 2s ease-out infinite"></div></div>`,className:'',iconSize:[40,40],iconAnchor:[20,20]});}
+function updateLiveMarker(lat,lng){if(!liveMarker){liveMarker=L.marker([lat,lng],{icon:createBlueDotIcon(),zIndexOffset:1000}).addTo(map).bindPopup('📍 Live');}else liveMarker.setLatLng([lat,lng]);if(!liveCircle)liveCircle=L.circle([lat,lng],{radius:15,color:'#4285F4',fillColor:'#4285F4',fillOpacity:.1,weight:1.5,dashArray:'4,4'}).addTo(map);else liveCircle.setLatLng([lat,lng]);if(isFollowingLive&&selectedTripIndex<0)map.panTo([lat,lng],{animate:true,duration:.5});}
 
 // ===== SHEET TRIPS =====
-function loadSheetTrips() {
-    fetch(SHEETS_CSV).then(r => r.text()).then(csv => {
-        const rows = csv.split('\n').filter(l => l.trim());
-        if (rows.length < 2) return;
-        const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
-        const data = [];
-        for (let i = 1; i < rows.length; i++) {
-            const cols = rows[i].split(',').map(c => c.trim());
-            if (cols.length < 7) continue;
-            const obj = {};
-            headers.forEach((h, idx) => { obj[h] = cols[idx] || ''; });
-            data.push(obj);
-        }
-        trips = extractTrips(data);
-        document.getElementById('stTrips').textContent = trips.length;
-        renderTripList();
-        if (selectedTripIndex < 0) renderAllTripsOnMap();
-    }).catch(e => console.error('Sheets error:', e));
-}
+function loadSheetTrips(){fetch(SHEETS_CSV+'&_='+Date.now()).then(r=>r.text()).then(csv=>{const rows=csv.split('\n').filter(l=>l.trim());if(rows.length<2)return;const headers=rows[0].split(',').map(h=>h.trim().toLowerCase().replace(/\s+/g,'_'));const data=[];for(let i=1;i<rows.length;i++){const cols=rows[i].split(',').map(c=>c.trim());if(cols.length<7)continue;const obj={};headers.forEach((h,idx)=>{obj[h]=cols[idx]||'';});data.push(obj);}trips=extractTrips(data);document.getElementById('stTrips').textContent=trips.length;renderTripList();if(selectedTripIndex<0)renderAllTripsOnMap();}).catch(e=>console.error(e));}
+function extractTrips(rows){const tl=[];let c=null;for(const r of rows){const relay=(r.relay_state||'').toUpperCase()==='TRUE';const lat=parseFloat(r.latitude||0),lng=parseFloat(r.longitude||0);const ts=new Date(r.timestamp||Date.now());const d=r.driver||'None';if(relay&&!c)c={driver:d,startTime:ts,endTime:ts,points:[],runtime:'0:00:00'};if(c){if(lat&&lng)c.points.push({lat,lng,ts});c.endTime=ts;c.runtime=r.run_time||'0:00:00';if(!relay){tl.push(c);c=null;}}}if(c)tl.push(c);return tl;}
+function renderTripList(){const el=document.getElementById('tripList');if(!trips.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">No trips yet</div>';return;}let h='';trips.forEach((t,i)=>{const d=calcTripDistance(t);h+=`<div class="trip-item ${i===selectedTripIndex?'selected':''}" onclick="toggleTrip(${i})"><div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div><div class="trip-detail">📏 ${d.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div></div>`;});el.innerHTML=h;}
+function toggleTrip(i){if(selectedTripIndex===i)showAllTrips();else{selectedTripIndex=i;isFollowingLive=false;renderTripList();zoomToTrip(i);}}
+function showAllTrips(){selectedTripIndex=-1;isFollowingLive=true;renderTripList();renderAllTripsOnMap();if(liveMarker){const ll=liveMarker.getLatLng();map.setView([ll.lat,ll.lng],14,{animate:true});}}
+function zoomToTrip(i){const t=trips[i];if(t.points.length){clearTripLines();const ll=t.points.map(p=>[p.lat,p.lng]);pathLines.push(L.polyline(ll,{color:'#f6ad55',weight:4}).addTo(map));tripMarkers.push(L.circleMarker([t.points[0].lat,t.points[0].lng],{radius:8,fillColor:'#f6ad55',color:'#fff',weight:2,fillOpacity:1}).addTo(map));const last=t.points[t.points.length-1];tripMarkers.push(L.circleMarker([last.lat,last.lng],{radius:8,fillColor:'#fc8181',color:'#fff',weight:2,fillOpacity:1}).addTo(map));map.fitBounds(L.latLngBounds(ll),{padding:[40,40]});}}
+function renderAllTripsOnMap(){clearTripLines();const cols=['#48bb78','#63b3ed','#9f7aea','#00d4ff','#f6ad55','#fc8181'];trips.forEach((t,i)=>{if(t.points.length<2)return;const ll=t.points.map(p=>[p.lat,p.lng]);pathLines.push(L.polyline(ll,{color:cols[i%cols.length],weight:2.5,opacity:.7}).addTo(map));tripMarkers.push(L.circleMarker([t.points[0].lat,t.points[0].lng],{radius:6,fillColor:cols[i%6],color:'#fff',weight:2,fillOpacity:1}).addTo(map));});}
+function clearTripLines(){pathLines.forEach(l=>map.removeLayer(l));pathLines=[];tripMarkers.forEach(m=>map.removeLayer(m));tripMarkers=[];}
+function calcTripDistance(t){let d=0;for(let i=1;i<t.points.length;i++){const r=6371;const dLat=(t.points[i].lat-t.points[i-1].lat)*Math.PI/180;const dLng=(t.points[i].lng-t.points[i-1].lng)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(t.points[i-1].lat*Math.PI/180)*Math.cos(t.points[i].lat*Math.PI/180)*Math.sin(dLng/2)**2;d+=r*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}return d;}
 
-function extractTrips(rows) {
-    const tripList = [];
-    let current = null;
-    for (const row of rows) {
-        const relay = (row.relay_state || '').toUpperCase() === 'TRUE';
-        const lat = parseFloat(row.latitude || 0), lng = parseFloat(row.longitude || 0);
-        const ts = new Date(row.timestamp || Date.now());
-        const driver = row.driver || 'None';
-        if (relay && !current) current = { driver, startTime: ts, endTime: ts, points: [], runtime: '0:00:00' };
-        if (current) {
-            if (lat && lng) current.points.push({ lat, lng, ts });
-            current.endTime = ts;
-            current.runtime = row.run_time || '0:00:00';
-            if (!relay) { tripList.push(current); current = null; }
-        }
-    }
-    if (current) tripList.push(current);
-    return tripList;
-}
-
-function renderTripList() {
-    const el = document.getElementById('tripList');
-    if (!trips.length) { el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No trips yet</div>'; return; }
-    let html = '';
-    trips.forEach((t, i) => {
-        const dist = calcTripDistance(t);
-        html += `<div class="trip-item ${i === selectedTripIndex ? 'selected' : ''}" onclick="toggleTrip(${i})">
-            <div class="trip-header"><span class="trip-driver">👤 ${t.driver}</span><span class="trip-time">${t.startTime.toLocaleString()}</span></div>
-            <div class="trip-detail">📏 ${dist.toFixed(2)} km | ⏱ ${t.runtime} | 📍 ${t.points.length} pts</div></div>`;
-    });
-    el.innerHTML = html;
-}
-
-function toggleTrip(i) {
-    if (selectedTripIndex === i) showAllTrips();
-    else { selectedTripIndex = i; isFollowingLive = false; renderTripList(); zoomToTrip(i); }
-}
-
-function showAllTrips() {
-    selectedTripIndex = -1; isFollowingLive = true; renderTripList(); renderAllTripsOnMap();
-    if (liveMarker) { const ll = liveMarker.getLatLng(); map.setView([ll.lat, ll.lng], 14, {animate: true}); }
-}
-
-function zoomToTrip(i) {
-    const t = trips[i];
-    if (t.points.length) {
-        clearTripLines();
-        const latlngs = t.points.map(p => [p.lat, p.lng]);
-        pathLines.push(L.polyline(latlngs, {color:'#f6ad55', weight:4}).addTo(map));
-        tripMarkers.push(L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:8,fillColor:'#f6ad55',color:'#fff',weight:2,fillOpacity:1}).addTo(map));
-        const last = t.points[t.points.length-1];
-        tripMarkers.push(L.circleMarker([last.lat, last.lng], {radius:8,fillColor:'#fc8181',color:'#fff',weight:2,fillOpacity:1}).addTo(map));
-        map.fitBounds(L.latLngBounds(latlngs), {padding:[40,40]});
-    }
-}
-
-function renderAllTripsOnMap() {
-    clearTripLines();
-    const colors = ['#48bb78','#63b3ed','#9f7aea','#00d4ff','#f6ad55','#fc8181'];
-    trips.forEach((t, i) => {
-        if (t.points.length < 2) return;
-        const latlngs = t.points.map(p => [p.lat, p.lng]);
-        pathLines.push(L.polyline(latlngs, {color:colors[i%colors.length], weight:2.5, opacity:0.7}).addTo(map));
-        tripMarkers.push(L.circleMarker([t.points[0].lat, t.points[0].lng], {radius:6,fillColor:colors[i%6],color:'#fff',weight:2,fillOpacity:1}).addTo(map));
-    });
-}
-
-function clearTripLines() { pathLines.forEach(l => map.removeLayer(l)); pathLines = []; tripMarkers.forEach(m => map.removeLayer(m)); tripMarkers = []; }
-function calcTripDistance(t) { let d = 0; for (let i = 1; i < t.points.length; i++) { const r = 6371; const dLat = (t.points[i].lat-t.points[i-1].lat)*Math.PI/180; const dLng = (t.points[i].lng-t.points[i-1].lng)*Math.PI/180; const a = Math.sin(dLat/2)**2 + Math.cos(t.points[i-1].lat*Math.PI/180)*Math.cos(t.points[i].lat*Math.PI/180)*Math.sin(dLng/2)**2; d += r*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); } return d; }
-
-// ===== SHEETS TABLE =====
-function loadSheetData(silent = false) {
-    if (!silent) {
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Refreshing data...</td></tr>';
-    }
-    
-    // Add cache-busting parameter to avoid Google's cache
-    const cacheBuster = '&_cb=' + Date.now();
-    
-    fetch(SHEETS_CSV + cacheBuster)
+// ===== LIVE SHEETS: DETECT NEW ROWS & APPEND =====
+function checkForNewRows() {
+    fetch(SHEETS_CSV + '&_=' + Date.now())
         .then(r => r.text())
         .then(csv => {
             const rows = csv.split('\n').filter(l => l.trim());
             if (rows.length < 2) return;
             const headers = rows[0].split(',').map(h => h.trim());
             
-            const newRows = [];
+            const freshRows = [];
+            const freshTimestamps = new Set();
+            
             for (let i = 1; i < rows.length; i++) {
                 const cols = rows[i].split(',').map(c => c.trim());
-                if (cols.length >= 7) newRows.push(cols);
+                if (cols.length >= 7) {
+                    const ts = cols[0];  // Timestamp is the unique key
+                    freshTimestamps.add(ts);
+                    freshRows.push(cols);
+                }
             }
             
-            // Detect if new rows were added
-            const isNewData = (newRows.length !== sheetRowCount);
-            sheetRowCount = newRows.length;
-            allSheetRows = newRows;
+            // Find NEW rows (timestamps not in knownTimestamps)
+            const newRows = freshRows.filter(row => !knownTimestamps.has(row[0]));
             
-            document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows loaded';
-            document.getElementById('lastRefreshTime').textContent = 'Last refresh: ' + new Date().toLocaleTimeString();
-            
-            renderTable(allSheetRows, isNewData && !silent);
+            if (newRows.length > 0) {
+                // Append new rows to the table
+                appendNewRows(newRows);
+                
+                // Update known timestamps
+                newRows.forEach(row => knownTimestamps.add(row[0]));
+                
+                // Update allSheetRows for search/sort
+                allSheetRows = freshRows;
+                
+                // Show notification
+                newRowCount += newRows.length;
+                const badge = document.getElementById('newRowsBadge');
+                badge.textContent = '+' + newRowCount;
+                badge.style.display = 'inline-block';
+                setTimeout(() => { badge.style.display = 'none'; newRowCount = 0; }, 3000);
+                
+                document.getElementById('sheetRowCount').textContent = freshRows.length + ' rows';
+                document.getElementById('lastRefreshTime').textContent = 'New: ' + new Date().toLocaleTimeString();
+                
+                // Auto-scroll to bottom to show new rows
+                const tableWrap = document.getElementById('tableWrap');
+                if (tableWrap) {
+                    tableWrap.scrollTop = tableWrap.scrollHeight;
+                }
+            } else {
+                document.getElementById('lastRefreshTime').textContent = 'Checked: ' + new Date().toLocaleTimeString();
+            }
         })
-        .catch(e => {
-            console.error('Sheet load error:', e);
-            if (!silent) {
-                document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--red);padding:30px">Failed to load data. Check console.</td></tr>';
-            }
-        });
+        .catch(e => console.error('Check error:', e));
 }
 
-function renderTable(rows, highlightNew = false) {
+function appendNewRows(newRows) {
     const tbody = document.getElementById('tableBody');
-    if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>';
-        return;
+    
+    // Remove "No data" message if present
+    if (tbody.children.length === 1 && tbody.children[0].cells.length === 1) {
+        tbody.innerHTML = '';
     }
     
-    // Preserve scroll position
-    const tableWrap = document.querySelector('.table-wrap');
-    const scrollTop = tableWrap ? tableWrap.scrollTop : 0;
-    
     let html = '';
-    rows.forEach((row, index) => {
+    newRows.forEach(row => {
         const relay = (row[8] || '').toUpperCase();
         const relayClass = relay === 'TRUE' ? 'relay-true' : 'relay-false';
-        const highlightClass = (highlightNew && index >= rows.length - 5) ? ' highlight-new' : '';
-        html += `<tr class="${highlightClass}">
+        html += `<tr class="new-row">
+            <td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td>
+            <td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td>
+            <td class="${relayClass}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
+    });
+    
+    tbody.insertAdjacentHTML('beforeend', html);
+    
+    // Remove highlight animation after 2 seconds
+    setTimeout(() => {
+        const newRowsEls = tbody.querySelectorAll('.new-row');
+        newRowsEls.forEach(el => el.classList.remove('new-row'));
+    }, 2000);
+}
+
+// ===== FULL RELOAD (for search/sort) =====
+function loadSheetData() {
+    knownTimestamps.clear();
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">Loading all data...</td></tr>';
+    
+    fetch(SHEETS_CSV + '&_=' + Date.now())
+        .then(r => r.text())
+        .then(csv => {
+            const rows = csv.split('\n').filter(l => l.trim());
+            if (rows.length < 2) return;
+            
+            allSheetRows = [];
+            for (let i = 1; i < rows.length; i++) {
+                const cols = rows[i].split(',').map(c => c.trim());
+                if (cols.length >= 7) {
+                    allSheetRows.push(cols);
+                    knownTimestamps.add(cols[0]);
+                }
+            }
+            
+            document.getElementById('sheetRowCount').textContent = allSheetRows.length + ' rows';
+            document.getElementById('lastRefreshTime').textContent = 'Full reload: ' + new Date().toLocaleTimeString();
+            renderTable(allSheetRows);
+        })
+        .catch(e => console.error('Load error:', e));
+}
+
+function renderTable(rows) {
+    const tbody = document.getElementById('tableBody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No data</td></tr>'; return; }
+    
+    let html = '';
+    rows.forEach(row => {
+        const relay = (row[8] || '').toUpperCase();
+        const relayClass = relay === 'TRUE' ? 'relay-true' : 'relay-false';
+        html += `<tr>
             <td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td>
             <td>${row[4]||''}</td><td>${row[5]||''}</td><td>${row[6]||''}</td><td>${row[7]||''}</td>
             <td class="${relayClass}">${row[8]||''}</td><td>${row[9]||''}</td></tr>`;
     });
     tbody.innerHTML = html;
-    
-    // Restore scroll position
-    if (tableWrap && !highlightNew) {
-        tableWrap.scrollTop = scrollTop;
-    }
 }
 
 function sortTable(col) {
@@ -534,10 +450,7 @@ function filterTable() {
     renderTable(filtered);
 }
 
-// ===== CLEANUP =====
-window.addEventListener('beforeunload', () => {
-    stopAutoRefresh();
-});
+window.addEventListener('beforeunload', () => stopAutoRefresh());
 </script>
 </body>
 </html>
